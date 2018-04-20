@@ -3,8 +3,12 @@
 
 var LEARNING_RATE = 0.05;
 var AI_VS_AI = false;
+var HALT_TRAINING_ON_DRAW_COUNT = 25;
+
+
 var requestAiVsAi = AI_VS_AI;
 var gameCount = 1;
+var drawStreak = 0;
 
 var cells;
 var currentPlayer;
@@ -142,11 +146,19 @@ function endTurn() {
 
     if (checkWin(cells, currentPlayer)) {
         console.log(`Game ${gameCount++}: ${currentPlayer} Wins!`);
+
+        drawStreak = 0;
         updateForLoss(otherPlayer);
         endGame();
     }
     else if (checkDraw(cells)) {
         console.log(`Game ${gameCount++}: Draw`);
+
+        drawStreak++;
+        if (drawStreak === HALT_TRAINING_ON_DRAW_COUNT && AI_VS_AI) {
+            toggleAiVsAI();
+        }
+
         endGame();
     }
     else {
