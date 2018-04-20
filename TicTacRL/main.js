@@ -1,6 +1,8 @@
 (function () {
 "use strict";
 
+var AI_VS_AI = false;
+
 var cells;
 var currentPlayer;
 var gameState;
@@ -11,6 +13,31 @@ var GameStates = {
     GameOver: 3,
 };
 
+//-----------------------------------------------------------------------------------------------------------------------------//
+// Initialisation
+//-----------------------------------------------------------------------------------------------------------------------------//
+function main() {
+    init();
+    bindInput();
+
+    if (AI_VS_AI)
+        aiAction();
+}
+
+function bindInput() {
+    for (let i = 0; i < 9; i++) {
+        let el = document.getElementById("cell" + i);
+        el.innerText = '';
+        el.onclick = () => {
+            if (gameState === GameStates.WaitForHuman) {
+                place(i);
+            }
+        };
+    }
+
+    document.getElementById("reset").onclick = main;
+}
+
 function init() {
     cells = [
         null, null, null,
@@ -18,10 +45,11 @@ function init() {
         null, null, null,
     ];
     currentPlayer = 'X';
-    gameState = GameStates.WaitForHuman;
+
+    gameState = AI_VS_AI ? GameStates.AgentActing : GameStates.WaitForHuman;
 }
 
-function encodeState() {
+function encodeState(cells) {
     let encodedState = 0;
     for (let i = 0; i < 9; i++) {
         let v;
@@ -46,11 +74,15 @@ function encodeState() {
     return encodedState;
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------//
+// Game Rules
+//-----------------------------------------------------------------------------------------------------------------------------//
 function place(cell) {
     if (!cells[cell]) {
         cells[cell] = currentPlayer;
         let el = document.getElementById("cell" + cell);
         el.innerText = currentPlayer;
+        console.log(`Encoded state: ${encodeState(cells)}`);
 
         endTurn();
     }
@@ -72,7 +104,15 @@ function endTurn() {
     }
     else {
         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-        console.log(`Encoded state: ${encodeState()}`);
+        if (gameState === GameStates.WaitForHuman) {
+            gameState = GameStates.AgentActing;
+        }
+        else if (!AI_VS_AI) {
+            gameState = GameStates.WaitForHuman;
+        }
+
+        if (gameState === GameStates.AgentActing)
+            aiAction();
     }
 }
 
@@ -98,24 +138,28 @@ function checkDraw() {
     return true;
 }
 
-function bindInput() {
+//-----------------------------------------------------------------------------------------------------------------------------//
+// AI
+//-----------------------------------------------------------------------------------------------------------------------------//
+function aiAction() {
+    setTimeout(() => {
+        let moves = getPotentialMoves();
+        let r = Math.floor(Math.random() * moves.length);
+        place(moves[r]);
+    }, 1);
+}
+
+function getPotentialMoves() {
+    let moves = [];
+
     for (let i = 0; i < 9; i++) {
-        let el = document.getElementById("cell" + i);
-        el.innerText = '';
-        el.onclick = () => {
-            if (gameState === GameStates.WaitForHuman) {
-                place(i);
-            }
-        };
+        if (!cells[i])
+            moves.push(i);
     }
 
-    document.getElementById("reset").onclick = main;
+    return moves;
 }
 
-function main() {
-    init();
-    bindInput();
-}
 
 window.onload = main;
 
