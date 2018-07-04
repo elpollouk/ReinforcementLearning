@@ -24,6 +24,7 @@ namespace Fours {
 
         private buildNetwork(): NeuralNet.Network {
             let net = new NeuralNet.Network();
+            
             net.setInputSize(86);
             net.addNeuronLayer(43);
             net.addNormalisingLayer();
