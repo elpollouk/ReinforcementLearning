@@ -1,10 +1,9 @@
 {
     "compilerOptions": {
         "outDir": "./js",
-        "outFile": "./js/NeuralNet.js",
+        "outFile": "./js/bundle.js",
         "sourceMap": true,
-        "target": "es6",
-        "declaration": true
+        "target": "es6"
     },
     "include": [
         "./src/**/*"

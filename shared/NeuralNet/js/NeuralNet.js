@@ -176,6 +176,38 @@ var NeuralNet;
 (function (NeuralNet) {
     var Utils;
     (function (Utils) {
+        class ArrayWriter {
+            constructor(array, _offset = 0, size = array.length) {
+                this.array = array;
+                this._offset = _offset;
+                this.size = size;
+                this._position = 0;
+            }
+            get position() {
+                return this._position;
+            }
+            get availableSpace() {
+                return this.size - this._position;
+            }
+            write(...values) {
+                if (this.availableSpace < values.length)
+                    throw new Error("Not enough space in buffer");
+                let offset = this._offset + this._position;
+                for (let i = 0; i < values.length; i++)
+                    this.array[offset + i] = values[i];
+                this._position += values.length;
+            }
+            seek(position) {
+                this._position = position;
+            }
+        }
+        Utils.ArrayWriter = ArrayWriter;
+    })(Utils = NeuralNet.Utils || (NeuralNet.Utils = {}));
+})(NeuralNet || (NeuralNet = {}));
+var NeuralNet;
+(function (NeuralNet) {
+    var Utils;
+    (function (Utils) {
         function ArrayValueGenerator(values) {
             let i = 0;
             return () => values[i++];
