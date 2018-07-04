@@ -3,7 +3,7 @@ namespace NeuralNet {
         public readonly type = "neuron";
         public inputs: number[] = [];
         public outputs: number[] = [];
-        private _neurons: Neuron[] = [];
+        public neurons: Neuron[] = [];
 
         public constructor(size = 0, activation: ActivationFunctions.ActivationFunction = null) {
             while (size --> 0) {
@@ -15,14 +15,14 @@ namespace NeuralNet {
         }
 
         public activate(): number[] {
-            for (let i = 0; i < this._neurons.length; i++)
-                this.outputs[i] = this._neurons[i].activate();
+            for (let i = 0; i < this.neurons.length; i++)
+                this.outputs[i] = this.neurons[i].activate();
 
             return this.outputs;
         }
 
         public addNeuron(neuron: Neuron) {
-            this._neurons.push(neuron);
+            this.neurons.push(neuron);
             this.outputs.push(0);
 
             neuron.setInputs(this.inputs);
@@ -30,20 +30,20 @@ namespace NeuralNet {
 
         public setInputs(inputs: number[]) {
             this.inputs = inputs;
-            for (let i = 0; i < this._neurons.length; i++)
-                this._neurons[i].setInputs(inputs);
+            for (let i = 0; i < this.neurons.length; i++)
+                this.neurons[i].setInputs(inputs);
         }
 
         public initialiseWeights(weights: Utils.ValueGenerator = null) {
-            for (let i = 0; i < this._neurons.length; i++)
-                this._neurons[i].initialiseWeights(weights);
+            for (let i = 0; i < this.neurons.length; i++)
+                this.neurons[i].initialiseWeights(weights);
         }
 
         public toJson(): any {
             let neurons = [];
-            for (let i = 0; i < this._neurons.length; i++) {
+            for (let i = 0; i < this.neurons.length; i++) {
                 neurons.push({
-                    "weights": this._neurons[i].weights
+                    "weights": this.neurons[i].weights
                 });
             }
 

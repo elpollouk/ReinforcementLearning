@@ -20,6 +20,7 @@ function main() {
     document.getElementById("gameArea").appendChild(game.container);
     document.getElementById("reset").onclick = function () {
         game.reset();
+        agent.mutate();
         document.getElementById("gameArea").classList.remove("gameover");
     };
     document.getElementById("act").onclick = function () {

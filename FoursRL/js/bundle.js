@@ -19,7 +19,7 @@ var Fours;
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
         }
         buildNetwork() {
-            let net = new NeuralNet.Network();
+            let net = new NeuralNet.Genetic.Network();
             net.setInputSize(86);
             net.addNeuronLayer(43);
             net.addNormalisingLayer();
@@ -27,6 +27,9 @@ var Fours;
             net.addNormalisingLayer();
             net.addNeuronLayer(1);
             return net;
+        }
+        mutate() {
+            this.net.mutate(0.05, 0.02);
         }
         act() {
             if (this.game.winner)

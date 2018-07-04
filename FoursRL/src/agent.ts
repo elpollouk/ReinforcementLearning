@@ -14,7 +14,7 @@ namespace Fours {
     }
 
     export class Agent {
-        public net: NeuralNet.Network;
+        public net: NeuralNet.Genetic.Network;
         private _featureWriter: NeuralNet.Utils.ArrayWriter<number>;
 
         public constructor(public readonly game: Game) {
@@ -22,8 +22,8 @@ namespace Fours {
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
         }
 
-        private buildNetwork(): NeuralNet.Network {
-            let net = new NeuralNet.Network();
+        private buildNetwork(): NeuralNet.Genetic.Network {
+            let net = new NeuralNet.Genetic.Network();
 
             net.setInputSize(86);
             net.addNeuronLayer(43);
@@ -33,6 +33,10 @@ namespace Fours {
             net.addNeuronLayer(1);
 
             return net;
+        }
+
+        public mutate() {
+            this.net.mutate(0.05, 0.02);
         }
 
         public act() {

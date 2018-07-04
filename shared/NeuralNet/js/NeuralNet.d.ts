@@ -3,15 +3,6 @@ declare namespace NeuralNet.ActivationFunctions {
     function ReLU(inputs: number[], weights: number[]): number;
 }
 declare namespace NeuralNet {
-    interface ILayer {
-        readonly type: string;
-        outputs: number[];
-        setInputs(inputs: number[]): any;
-        activate(): number[];
-        toJson(): any;
-    }
-}
-declare namespace NeuralNet {
     class Network {
         private _layers;
         inputs: number[];
@@ -21,6 +12,22 @@ declare namespace NeuralNet {
         addLayer(layer: ILayer): void;
         addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
         addNormalisingLayer(): NormalisingLayer;
+        toJson(): any;
+    }
+}
+declare namespace NeuralNet.Genetic {
+    class Network extends NeuralNet.Network {
+        private _mutators;
+        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
+        mutate(probability: number, scale: number): void;
+    }
+}
+declare namespace NeuralNet {
+    interface ILayer {
+        readonly type: string;
+        outputs: number[];
+        setInputs(inputs: number[]): any;
+        activate(): number[];
         toJson(): any;
     }
 }
@@ -42,7 +49,7 @@ declare namespace NeuralNet {
         readonly type: string;
         inputs: number[];
         outputs: number[];
-        private _neurons;
+        neurons: Neuron[];
         constructor(size?: number, activation?: ActivationFunctions.ActivationFunction);
         activate(): number[];
         addNeuron(neuron: Neuron): void;

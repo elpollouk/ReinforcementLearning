@@ -62,6 +62,45 @@ var NeuralNet;
     }
     NeuralNet.Network = Network;
 })(NeuralNet || (NeuralNet = {}));
+/// <reference path="Network.ts" />
+var NeuralNet;
+(function (NeuralNet) {
+    var Genetic;
+    (function (Genetic) {
+        class Mutator {
+            constructor(_target) {
+                this._target = _target;
+            }
+            mutate(probability, scale) {
+                for (let i = 0; i < this._target.length; i++) {
+                    if (Math.random() < probability) {
+                        let delta = (Math.random() * scale * 2) - scale;
+                        this._target[i] += delta;
+                    }
+                }
+            }
+        }
+        class Network extends NeuralNet.Network {
+            constructor() {
+                super(...arguments);
+                this._mutators = [];
+            }
+            addNeuronLayer(size = 0, activation = null) {
+                let layer = super.addNeuronLayer(size, activation);
+                for (let i = 0; i < layer.neurons.length; i++) {
+                    let mutator = new Mutator(layer.neurons[i].weights);
+                    this._mutators.push(mutator);
+                }
+                return layer;
+            }
+            mutate(probability, scale) {
+                for (let i = 0; i < this._mutators.length; i++)
+                    this._mutators[i].mutate(probability, scale);
+            }
+        }
+        Genetic.Network = Network;
+    })(Genetic = NeuralNet.Genetic || (NeuralNet.Genetic = {}));
+})(NeuralNet || (NeuralNet = {}));
 var NeuralNet;
 (function (NeuralNet) {
     class Neuron {
@@ -105,7 +144,7 @@ var NeuralNet;
             this.type = "neuron";
             this.inputs = [];
             this.outputs = [];
-            this._neurons = [];
+            this.neurons = [];
             while (size-- > 0) {
                 let neuron = new NeuralNet.Neuron(activation);
                 this.addNeuron(neuron);
@@ -113,29 +152,29 @@ var NeuralNet;
             this.initialiseWeights();
         }
         activate() {
-            for (let i = 0; i < this._neurons.length; i++)
-                this.outputs[i] = this._neurons[i].activate();
+            for (let i = 0; i < this.neurons.length; i++)
+                this.outputs[i] = this.neurons[i].activate();
             return this.outputs;
         }
         addNeuron(neuron) {
-            this._neurons.push(neuron);
+            this.neurons.push(neuron);
             this.outputs.push(0);
             neuron.setInputs(this.inputs);
         }
         setInputs(inputs) {
             this.inputs = inputs;
-            for (let i = 0; i < this._neurons.length; i++)
-                this._neurons[i].setInputs(inputs);
+            for (let i = 0; i < this.neurons.length; i++)
+                this.neurons[i].setInputs(inputs);
         }
         initialiseWeights(weights = null) {
-            for (let i = 0; i < this._neurons.length; i++)
-                this._neurons[i].initialiseWeights(weights);
+            for (let i = 0; i < this.neurons.length; i++)
+                this.neurons[i].initialiseWeights(weights);
         }
         toJson() {
             let neurons = [];
-            for (let i = 0; i < this._neurons.length; i++) {
+            for (let i = 0; i < this.neurons.length; i++) {
                 neurons.push({
-                    "weights": this._neurons[i].weights
+                    "weights": this.neurons[i].weights
                 });
             }
             return {
