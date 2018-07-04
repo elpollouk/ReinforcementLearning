@@ -25,6 +25,14 @@ function main() {
     }
 }
 
+var net = new NeuralNet.Network();
+net.setInputSize(86);
+net.addNeuronLayer(43);
+net.addNormalisingLayer();
+net.addNeuronLayer(20);
+net.addNormalisingLayer();
+net.addNeuronLayer(1);
+
 window.onload = main;
 
 })()

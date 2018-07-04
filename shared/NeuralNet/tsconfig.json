@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "outDir": "./js",
+        "outFile": "./js/NeuralNet.js",
+        "sourceMap": true,
+        "target": "es6",
+        "module": "system"
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}
