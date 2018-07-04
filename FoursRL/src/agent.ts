@@ -24,7 +24,7 @@ namespace Fours {
 
         private buildNetwork(): NeuralNet.Network {
             let net = new NeuralNet.Network();
-            
+
             net.setInputSize(86);
             net.addNeuronLayer(43);
             net.addNormalisingLayer();
@@ -43,8 +43,8 @@ namespace Fours {
             let maxPositionValue = 0;
 
             for (let i = 0; i < this.game.width; i++) {
-
                 let value: number;
+                
                 if (this.game.state[i].length < this.game.height) {
                     this.game.action(i);
                     if (this.game.winner) {
