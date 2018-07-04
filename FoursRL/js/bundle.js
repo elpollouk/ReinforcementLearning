@@ -35,15 +35,20 @@ var Fours;
             let maxPositionValue = 0;
             for (let i = 0; i < this.game.width; i++) {
                 let value;
-                this.game.action(i);
-                if (this.game.winner) {
-                    value = 1000;
+                if (this.game.state[i].length < this.game.height) {
+                    this.game.action(i);
+                    if (this.game.winner) {
+                        value = 1000;
+                    }
+                    else {
+                        this.featuriseGame();
+                        value = this.net.activate()[0];
+                    }
+                    this.game.undo();
                 }
                 else {
-                    this.featuriseGame();
-                    value = this.net.activate()[0];
+                    value = -1000;
                 }
-                this.game.undo();
                 if (maxPositionValue < value) {
                     maxPositionValue = value;
                     maxPosition = i;
