@@ -1,6 +1,7 @@
 declare namespace NeuralNet.ActivationFunctions {
     type ActivationFunction = (inputs: number[], weights: number[]) => number;
     function ReLU(inputs: number[], weights: number[]): number;
+    function Sigmoid(scale?: number): ActivationFunction;
 }
 declare namespace NeuralNet {
     class Network {
@@ -84,5 +85,5 @@ declare namespace NeuralNet.Utils {
 declare namespace NeuralNet.Utils {
     type ValueGenerator = number[] | (() => number);
     function ArrayValueGenerator(values: number[]): ValueGenerator;
-    function RandomValueGenerator(): ValueGenerator;
+    function RandomValueGenerator(min?: number, max?: number): ValueGenerator;
 }

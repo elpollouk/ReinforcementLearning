@@ -6,9 +6,21 @@ var NeuralNet;
             let sum = 0;
             for (let i = 0; i < inputs.length; i++)
                 sum += (inputs[i] * weights[i]);
+            if (sum < 0)
+                sum = 0;
             return sum;
         }
         ActivationFunctions.ReLU = ReLU;
+        function Sigmoid(scale = 1) {
+            return (inputs, weights) => {
+                let value = 0;
+                for (let i = 0; i < inputs.length; i++)
+                    value += (inputs[i] * weights[i]);
+                value = 1 / (1 + Math.exp(-value * scale));
+                return value;
+            };
+        }
+        ActivationFunctions.Sigmoid = Sigmoid;
     })(ActivationFunctions = NeuralNet.ActivationFunctions || (NeuralNet.ActivationFunctions = {}));
 })(NeuralNet || (NeuralNet = {}));
 var NeuralNet;
@@ -124,7 +136,7 @@ var NeuralNet;
                 this.initialiseWeights(weights);
         }
         initialiseWeights(weights = null) {
-            weights = weights || NeuralNet.Utils.RandomValueGenerator();
+            weights = weights || NeuralNet.Utils.RandomValueGenerator(-1, 1);
             if (typeof weights === "function") {
                 this.weights = Array(this.inputs.length);
                 for (let i = 0; i < this.weights.length; i++)
@@ -252,8 +264,9 @@ var NeuralNet;
             return () => values[i++];
         }
         Utils.ArrayValueGenerator = ArrayValueGenerator;
-        function RandomValueGenerator() {
-            return () => Math.random();
+        function RandomValueGenerator(min = 0, max = 1) {
+            let range = max - min;
+            return () => (Math.random() * range) + min;
         }
         Utils.RandomValueGenerator = RandomValueGenerator;
     })(Utils = NeuralNet.Utils || (NeuralNet.Utils = {}));

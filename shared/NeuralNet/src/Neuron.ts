@@ -24,7 +24,7 @@ namespace NeuralNet {
         }
 
         public initialiseWeights(weights: Utils.ValueGenerator = null) {
-            weights = weights || Utils.RandomValueGenerator();
+            weights = weights || Utils.RandomValueGenerator(-1, 1);
             
             if (typeof weights === "function") {
                 this.weights = Array(this.inputs.length);

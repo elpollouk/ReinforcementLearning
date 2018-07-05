@@ -6,7 +6,8 @@ namespace NeuralNet.Utils {
         return () => values[i++];
     }
 
-    export function RandomValueGenerator() : ValueGenerator {
-        return () => Math.random();
+    export function RandomValueGenerator(min: number = 0, max: number = 1) : ValueGenerator {
+        let range = max - min;
+        return () => (Math.random() * range) + min;
     }
 }

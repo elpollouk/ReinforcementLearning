@@ -25,7 +25,7 @@ var Fours;
             net.addNormalisingLayer();
             net.addNeuronLayer(20);
             net.addNormalisingLayer();
-            net.addNeuronLayer(1);
+            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Sigmoid(1 / 20));
             return net;
         }
         mutate() {
