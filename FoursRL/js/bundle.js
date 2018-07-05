@@ -41,42 +41,6 @@ var Fours;
     }
     Fours.GameContainer = GameContainer;
 })(Fours || (Fours = {}));
-var Fours;
-(function (Fours) {
-    let gameContainers = [];
-    let numGames = 0;
-    let statsOutput;
-    function TrainMain() {
-        statsOutput = document.getElementById("stats");
-        let root = document.getElementById("gamesHolder");
-        for (let y = 0; y < 4; y++) {
-            let row = document.createElement("div");
-            for (let i = 0; i < 5; i++) {
-                let container = new Fours.GameContainer(row);
-                gameContainers.push(container);
-            }
-            root.appendChild(row);
-        }
-        step();
-    }
-    Fours.TrainMain = TrainMain;
-    function step() {
-        for (let i = 0; i < gameContainers.length; i++) {
-            if (gameContainers[i].game.gameover) {
-                numGames++;
-                updateStats();
-                gameContainers[i].reset();
-            }
-            else {
-                gameContainers[i].act();
-            }
-        }
-        window.requestAnimationFrame(step);
-    }
-    function updateStats() {
-        statsOutput.innerText = `Num games =${numGames}`;
-    }
-})(Fours || (Fours = {}));
 /// <reference path="../../shared/NeuralNet/js/NeuralNet.d.ts" />
 var Fours;
 (function (Fours) {
@@ -152,6 +116,56 @@ var Fours;
         }
     }
     Fours.Agent = Agent;
+})(Fours || (Fours = {}));
+/// <reference path="agent.ts" />
+var Fours;
+(function (Fours) {
+    let gameContainers = [];
+    let numGames = 0;
+    let statsOutput;
+    const vizWidth = 5;
+    const vizHeight = 4;
+    let agents = [
+        new Fours.Agent(),
+        new Fours.Agent(),
+        new Fours.Agent(),
+        new Fours.Agent(),
+        new Fours.Agent()
+    ];
+    let matchUps = [];
+    for (let i = 0; i < agents.length; i++)
+        for (let j = 0; j < agents.length; j++)
+            if (i != j)
+                matchUps.push([agents[i], agents[j]]);
+    function TrainMain() {
+        statsOutput = document.getElementById("stats");
+        let root = document.getElementById("gamesHolder");
+        for (let y = 0; y < vizHeight; y++) {
+            let row = document.createElement("div");
+            for (let i = 0; i < vizWidth; i++) {
+                let agents = matchUps.shift();
+                let container = new Fours.GameContainer(row, agents[0], agents[1]);
+                gameContainers.push(container);
+            }
+            root.appendChild(row);
+        }
+        step();
+    }
+    Fours.TrainMain = TrainMain;
+    function step() {
+        for (let i = 0; i < gameContainers.length; i++) {
+            if (gameContainers[i].game.gameover) {
+                numGames++;
+                updateStats();
+                gameContainers[i].reset();
+            }
+            gameContainers[i].act();
+        }
+        window.requestAnimationFrame(step);
+    }
+    function updateStats() {
+        statsOutput.innerText = `Num games =${numGames}`;
+    }
 })(Fours || (Fours = {}));
 var Fours;
 (function (Fours) {
