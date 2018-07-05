@@ -46,6 +46,8 @@ namespace Fours {
             let maxPosition = 0;
             let maxPositionValue = 0;
 
+            let currentPlayer = this.game.currentPlayer;
+
             for (let i = 0; i < this.game.width; i++) {
                 let value: number;
                 
@@ -55,7 +57,7 @@ namespace Fours {
                         value = 1000;
                     }
                     else {
-                        this.featuriseGame();
+                        this.featuriseGame(currentPlayer);
                         value = this.net.activate()[0];
                     }
                     this.game.undo();
@@ -73,15 +75,16 @@ namespace Fours {
             this.game.action(maxPosition);
         }
 
-        private featuriseGame() {
+        private featuriseGame(currentPlayer) {
             this._featureWriter.seek(0);
-            writeRedOrBlueFeature(this._featureWriter, this.game.currentPlayer);
+
+            writeRedOrBlueFeature(this._featureWriter, currentPlayer);
             for (let i = 0; i < this.game.state.length; i++) {
                 let column = this.game.state[i];
                 let emptyRows = this.game.height - column.length;
 
                 for (let j = 0; j < column.length; j++)
-                    writeRedOrBlueFeature(this._featureWriter, column[i]);
+                    writeRedOrBlueFeature(this._featureWriter, column[j]);
 
                 while (emptyRows --> 0)
                     writeRedOrBlueFeature(this._featureWriter, null);
