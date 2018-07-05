@@ -2,8 +2,6 @@ var Fours;
 (function (Fours) {
     class GameContainer {
         constructor(parent, agentRed = null, agentBlue = null) {
-            this.redScore = 0;
-            this.blueScore = 0;
             let gameArea = parent.ownerDocument.createElement("div");
             gameArea.classList.add("gameArea");
             this.element = parent.ownerDocument.createElement("div");
@@ -20,23 +18,9 @@ var Fours;
                 this.agentRed.act(this.game);
             else
                 this.agentBlue.act(this.game);
-            if (this.game.gameover) {
-                if (this.game.winner === Fours.PLAYER_RED) {
-                    this.redScore += 3;
-                }
-                else if (this.game.winner === Fours.PLAYER_BLUE) {
-                    this.blueScore += 3;
-                }
-                else {
-                    this.redScore++;
-                    this.blueScore++;
-                }
-            }
         }
         reset() {
             this.game.reset();
-            this.agentRed.mutate();
-            this.agentBlue.mutate();
         }
     }
     Fours.GameContainer = GameContainer;
@@ -122,6 +106,7 @@ var Fours;
 (function (Fours) {
     let gameContainers = [];
     let numGames = 0;
+    let numGenerations = 0;
     let statsOutput;
     const vizWidth = 5;
     const vizHeight = 4;
@@ -132,6 +117,11 @@ var Fours;
         new Fours.Agent(),
         new Fours.Agent()
     ];
+    let agentStats = [];
+    for (let i = 0; i < agents.length; i++)
+        agentStats.push({
+            score: 0
+        });
     let matchUps = [];
     for (let i = 0; i < agents.length; i++)
         for (let j = 0; j < agents.length; j++)
@@ -153,18 +143,50 @@ var Fours;
     }
     Fours.TrainMain = TrainMain;
     function step() {
+        let hasActed = false;
         for (let i = 0; i < gameContainers.length; i++) {
-            if (gameContainers[i].game.gameover) {
-                numGames++;
-                updateStats();
-                gameContainers[i].reset();
+            if (!gameContainers[i].game.gameover) {
+                gameContainers[i].act();
+                hasActed = true;
+                if (gameContainers[i].game.gameover) {
+                    numGames++;
+                    updateAgentStats(gameContainers[i]);
+                    updateStats();
+                }
             }
-            gameContainers[i].act();
         }
+        if (!hasActed)
+            nextGeneration();
         window.requestAnimationFrame(step);
     }
+    function nextGeneration() {
+        for (let i = 0; i < agentStats.length; i++)
+            agentStats[i].score = 0;
+        for (let i = 0; i < agents.length; i++)
+            agents[i].mutate();
+        for (let i = 0; i < gameContainers.length; i++) {
+            gameContainers[i].reset();
+            gameContainers[i].act();
+        }
+        numGenerations++;
+        updateStats();
+    }
+    function updateAgentStats(container) {
+        let agentRedStats = agentStats[agents.indexOf(container.agentRed)];
+        let agentBlueStats = agentStats[agents.indexOf(container.agentBlue)];
+        if (container.game.winner === Fours.PLAYER_RED) {
+            agentRedStats.score += 3;
+        }
+        else if (container.game.winner === Fours.PLAYER_BLUE) {
+            agentBlueStats.score += 3;
+        }
+        else {
+            agentRedStats.score += 1;
+            agentBlueStats.score += 1;
+        }
+    }
     function updateStats() {
-        statsOutput.innerText = `Num games =${numGames}`;
+        statsOutput.innerHTML = `Generation = ${numGenerations}<br/>Num games = ${numGames}`;
     }
 })(Fours || (Fours = {}));
 var Fours;
