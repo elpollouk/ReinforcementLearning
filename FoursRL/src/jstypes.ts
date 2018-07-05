@@ -7,6 +7,7 @@ namespace Fours {
         height: number;
         winLength: number;
         currentPlayer: string;
+        gameover: boolean;
         winner: string;
         state: string[][];
 

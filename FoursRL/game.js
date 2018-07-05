@@ -27,6 +27,7 @@ function Game(width, height, winLength) {
 Game.prototype.reset = function () {
     this.currentPlayer = PLAYER_RED;
     this.winner = null;
+    this.gameover = false;
     this._undoBuffer = []
 
     this.state = [];
@@ -41,7 +42,7 @@ Game.prototype.reset = function () {
 }
 
 Game.prototype.action = function (columnIndex) {
-    if (this.winner) return false;
+    if (this.gameover) return false;
 
     let column = this.state[columnIndex];
     if (this.height <= column.length) return false;
@@ -50,12 +51,13 @@ Game.prototype.action = function (columnIndex) {
     column.push(this.currentPlayer);
     let element = this.elements[(this.width * rowIndex) + columnIndex];
     element.classList.add(this.currentPlayer);
+    this._undoBuffer.push(columnIndex);
 
     this.currentPlayer = this.currentPlayer == PLAYER_BLUE ? PLAYER_RED : PLAYER_BLUE;
 
-    this._checkForWinner();
-
-    this._undoBuffer.push(columnIndex);
+    this._checkForDraw();
+    if (!this.gameover)
+        this._checkForWinner();
 
     return true;
 }
@@ -77,6 +79,16 @@ Game.prototype.undo = function () {
     this.winner = null;
 }
 
+Game.prototype._checkForDraw = function () {
+    for (let i = 0; i < this.state.length; i++)
+        if (this.state[i].length != this.height)
+            return; // Not a draw if there's still space to place
+    
+    // No more space to play
+    this.gameover = true;
+    this.winner = null;
+}
+
 Game.prototype._checkForWinner = function () {
     for (let y = 0; y < this.height; y++) {
         for (let x = 0; x < this.width; x++) {
@@ -85,6 +97,7 @@ Game.prototype._checkForWinner = function () {
 
             if (this._checkForWinnerFromLocation(x, y)) {
                 this.winner = this.state[x][y];
+                this.gameover = true;
                 return;
             }
         }

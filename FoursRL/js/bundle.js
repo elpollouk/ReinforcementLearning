@@ -32,7 +32,7 @@ var Fours;
             this.net.mutate(0.05, 0.02);
         }
         act() {
-            if (this.game.winner)
+            if (this.game.gameover)
                 return;
             let maxPosition = 0;
             let maxPositionValue = 0;

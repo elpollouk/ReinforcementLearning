@@ -40,7 +40,7 @@ namespace Fours {
         }
 
         public act() {
-            if (this.game.winner)
+            if (this.game.gameover)
                 return;
 
             let maxPosition = 0;
