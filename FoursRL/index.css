@@ -22,7 +22,7 @@
 
 }
 
-.gameContainer.shrink {
+.shrink .gameContainer {
     width: 175px;
     height: 151px;
     overflow: hidden;

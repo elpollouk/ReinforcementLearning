@@ -3,6 +3,7 @@ namespace Fours {
     export const PLAYER_BLUE = "playerBlue";
 
     export declare class Game {
+        container: HTMLElement;
         width: number;
         height: number;
         winLength: number;
@@ -11,7 +12,6 @@ namespace Fours {
         winner: string;
         state: string[][];
 
-        constructor(width: number, height: number, winLength?: number);
         reset();
         action(column: number): boolean;
         undo();

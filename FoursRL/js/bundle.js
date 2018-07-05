@@ -1,3 +1,82 @@
+var Fours;
+(function (Fours) {
+    class GameContainer {
+        constructor(parent, agentRed = null, agentBlue = null) {
+            this.redScore = 0;
+            this.blueScore = 0;
+            let gameArea = parent.ownerDocument.createElement("div");
+            gameArea.classList.add("gameArea");
+            this.element = parent.ownerDocument.createElement("div");
+            this.element.classList.add("gameContainer");
+            this.game = window["createGame"](7, 6);
+            gameArea.appendChild(this.game.container);
+            this.element.appendChild(gameArea);
+            parent.appendChild(this.element);
+            this.agentRed = agentRed || new Fours.Agent();
+            this.agentBlue = agentBlue || new Fours.Agent();
+        }
+        act() {
+            if (this.game.currentPlayer === Fours.PLAYER_RED)
+                this.agentRed.act(this.game);
+            else
+                this.agentBlue.act(this.game);
+            if (this.game.gameover) {
+                if (this.game.winner === Fours.PLAYER_RED) {
+                    this.redScore += 3;
+                }
+                else if (this.game.winner === Fours.PLAYER_BLUE) {
+                    this.blueScore += 3;
+                }
+                else {
+                    this.redScore++;
+                    this.blueScore++;
+                }
+            }
+        }
+        reset() {
+            this.game.reset();
+            this.agentRed.mutate();
+            this.agentBlue.mutate();
+        }
+    }
+    Fours.GameContainer = GameContainer;
+})(Fours || (Fours = {}));
+var Fours;
+(function (Fours) {
+    let gameContainers = [];
+    let numGames = 0;
+    let statsOutput;
+    function TrainMain() {
+        statsOutput = document.getElementById("stats");
+        let root = document.getElementById("gamesHolder");
+        for (let y = 0; y < 4; y++) {
+            let row = document.createElement("div");
+            for (let i = 0; i < 5; i++) {
+                let container = new Fours.GameContainer(row);
+                gameContainers.push(container);
+            }
+            root.appendChild(row);
+        }
+        step();
+    }
+    Fours.TrainMain = TrainMain;
+    function step() {
+        for (let i = 0; i < gameContainers.length; i++) {
+            if (gameContainers[i].game.gameover) {
+                numGames++;
+                updateStats();
+                gameContainers[i].reset();
+            }
+            else {
+                gameContainers[i].act();
+            }
+        }
+        window.requestAnimationFrame(step);
+    }
+    function updateStats() {
+        statsOutput.innerText = `Num games =${numGames}`;
+    }
+})(Fours || (Fours = {}));
 /// <reference path="../../shared/NeuralNet/js/NeuralNet.d.ts" />
 var Fours;
 (function (Fours) {

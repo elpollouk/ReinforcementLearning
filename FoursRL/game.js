@@ -77,6 +77,7 @@ Game.prototype.undo = function () {
     this.currentPlayer = this.currentPlayer == PLAYER_BLUE ? PLAYER_RED : PLAYER_BLUE;
 
     this.winner = null;
+    this.gameover = false;
 }
 
 Game.prototype._checkForDraw = function () {
@@ -179,6 +180,10 @@ Game.prototype._checkForWinnerDiagonalRight = function (x, y) {
 Game.prototype._handleClick = function (column) {
     if (this.onColumnClicked)
         this.onColumnClicked(this, column)
+}
+
+window.createGame = function (width, height) {
+    return new Game(width, height);
 }
 
 window.Game = Game;
