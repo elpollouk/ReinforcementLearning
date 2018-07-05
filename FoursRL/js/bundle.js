@@ -13,8 +13,7 @@ var Fours;
         }
     }
     class Agent {
-        constructor(game) {
-            this.game = game;
+        constructor() {
             this.net = this.buildNetwork();
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
         }
@@ -31,24 +30,24 @@ var Fours;
         mutate() {
             this.net.mutate(0.05, 0.02);
         }
-        act() {
-            if (this.game.gameover)
+        act(game) {
+            if (game.gameover)
                 return;
+            let currentPlayer = game.currentPlayer;
             let maxPosition = 0;
             let maxPositionValue = 0;
-            let currentPlayer = this.game.currentPlayer;
-            for (let i = 0; i < this.game.width; i++) {
+            for (let i = 0; i < game.width; i++) {
                 let value;
-                if (this.game.state[i].length < this.game.height) {
-                    this.game.action(i);
-                    if (this.game.winner) {
+                if (game.state[i].length < game.height) {
+                    game.action(i);
+                    if (game.winner) {
                         value = 1000;
                     }
                     else {
-                        this.featuriseGame(currentPlayer);
+                        this.featuriseGame(game, currentPlayer);
                         value = this.net.activate()[0];
                     }
-                    this.game.undo();
+                    game.undo();
                 }
                 else {
                     value = -1000;
@@ -58,14 +57,14 @@ var Fours;
                     maxPosition = i;
                 }
             }
-            this.game.action(maxPosition);
+            game.action(maxPosition);
         }
-        featuriseGame(currentPlayer) {
+        featuriseGame(game, currentPlayer) {
             this._featureWriter.seek(0);
             writeRedOrBlueFeature(this._featureWriter, currentPlayer);
-            for (let i = 0; i < this.game.state.length; i++) {
-                let column = this.game.state[i];
-                let emptyRows = this.game.height - column.length;
+            for (let i = 0; i < game.state.length; i++) {
+                let column = game.state[i];
+                let emptyRows = game.height - column.length;
                 for (let j = 0; j < column.length; j++)
                     writeRedOrBlueFeature(this._featureWriter, column[j]);
                 while (emptyRows-- > 0)

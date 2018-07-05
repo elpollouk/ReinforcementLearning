@@ -8,7 +8,7 @@ var agent = null;
 
 function main() {
     function think() {
-        agent.act();
+        agent.act(game);
         if (game.gameover) {
             requestAnimationFrame(reset);
         }
@@ -31,7 +31,7 @@ function main() {
         }
     };
     
-    agent = new Fours.Agent(game);
+    agent = new Fours.Agent();
 
     document.getElementById("gameArea").appendChild(game.container);
     document.getElementById("reset").onclick = function () {
@@ -40,7 +40,7 @@ function main() {
         document.getElementById("gameArea").classList.remove("gameover");
     };
     document.getElementById("act").onclick = function () {
-        agent.act();
+        agent.act(game);
         if (game.gameover) {
             document.getElementById("gameArea").classList.add("gameover");
         }

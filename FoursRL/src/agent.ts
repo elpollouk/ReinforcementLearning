@@ -17,7 +17,7 @@ namespace Fours {
         public net: NeuralNet.Genetic.Network;
         private _featureWriter: NeuralNet.Utils.ArrayWriter<number>;
 
-        public constructor(public readonly game: Game) {
+        public constructor() {
             this.net = this.buildNetwork();
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
         }
@@ -39,28 +39,28 @@ namespace Fours {
             this.net.mutate(0.05, 0.02);
         }
 
-        public act() {
-            if (this.game.gameover)
+        public act(game: Game) {
+            if (game.gameover)
                 return;
+
+            let currentPlayer = game.currentPlayer;
 
             let maxPosition = 0;
             let maxPositionValue = 0;
 
-            let currentPlayer = this.game.currentPlayer;
-
-            for (let i = 0; i < this.game.width; i++) {
+            for (let i = 0; i < game.width; i++) {
                 let value: number;
                 
-                if (this.game.state[i].length < this.game.height) {
-                    this.game.action(i);
-                    if (this.game.winner) {
+                if (game.state[i].length < game.height) {
+                    game.action(i);
+                    if (game.winner) {
                         value = 1000;
                     }
                     else {
-                        this.featuriseGame(currentPlayer);
+                        this.featuriseGame(game, currentPlayer);
                         value = this.net.activate()[0];
                     }
-                    this.game.undo();
+                    game.undo();
                 }
                 else {
                     value = -1000;
@@ -72,16 +72,16 @@ namespace Fours {
                 }
             }
 
-            this.game.action(maxPosition);
+            game.action(maxPosition);
         }
 
-        private featuriseGame(currentPlayer) {
+        private featuriseGame(game: Game, currentPlayer: string) {
             this._featureWriter.seek(0);
 
             writeRedOrBlueFeature(this._featureWriter, currentPlayer);
-            for (let i = 0; i < this.game.state.length; i++) {
-                let column = this.game.state[i];
-                let emptyRows = this.game.height - column.length;
+            for (let i = 0; i < game.state.length; i++) {
+                let column = game.state[i];
+                let emptyRows = game.height - column.length;
 
                 for (let j = 0; j < column.length; j++)
                     writeRedOrBlueFeature(this._featureWriter, column[j]);

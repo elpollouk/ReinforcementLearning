@@ -15,16 +15,22 @@
     text-align: center;
     padding-top: 7px;
     padding-bottom: 7px;
-
-    /*position: relative;
-    top: -75px;
-    left: -88px;
-    transform: scale(0.5);*/
 }
 
 .gameContainer {
     display: inline-block;
-    /*width: 175px;
+
+}
+
+.gameContainer.shrink {
+    width: 175px;
     height: 151px;
-    overflow: hidden;*/
+    overflow: hidden;
+}
+
+.shrink .gameArea {
+    position: relative;
+    top: -75px;
+    left: -88px;
+    transform: scale(0.5);
 }
