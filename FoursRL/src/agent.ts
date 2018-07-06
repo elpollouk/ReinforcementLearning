@@ -14,6 +14,7 @@ namespace Fours {
     }
 
     export class Agent {
+        public readonly metadata: any = {};
         public net: NeuralNet.Genetic.Network;
         private _featureWriter: NeuralNet.Utils.ArrayWriter<number>;
 
@@ -36,7 +37,7 @@ namespace Fours {
         }
 
         public mutate() {
-            this.net.mutate(0.05, 0.02);
+            this.net.mutate(0.05, 0.1);
         }
 
         public act(game: Game) {

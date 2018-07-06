@@ -24,5 +24,9 @@ namespace NeuralNet {
         public toJson(): any {
             return {};
         }
+
+        public fromJson(json: any) {
+            
+        }
     }
 }

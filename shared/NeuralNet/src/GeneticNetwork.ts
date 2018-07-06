@@ -3,15 +3,16 @@
 namespace NeuralNet.Genetic {
 
     class Mutator {
-        public constructor(private _target: number[]) {
+        public constructor(private _target: Neuron) {
 
         }
 
         public mutate(probability: number, scale: number) {
-            for (let i = 0; i <  this._target.length; i++) {
+            let weights = this._target.weights;
+            for (let i = 0; i <  weights.length; i++) {
                 if (Math.random() < probability) {
                     let delta = (Math.random() * scale * 2) - scale;
-                    this._target[i] += delta;
+                    weights[i] += delta;
                 }
             }
         }
@@ -24,7 +25,7 @@ namespace NeuralNet.Genetic {
             let layer = super.addNeuronLayer(size, activation);
 
             for (let i = 0; i < layer.neurons.length; i++) {
-                let mutator = new Mutator(layer.neurons[i].weights);
+                let mutator = new Mutator(layer.neurons[i]);
                 this._mutators.push(mutator);
             }
 

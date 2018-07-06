@@ -71,6 +71,17 @@ var NeuralNet;
                 "layers": layers
             };
         }
+        fromJson(json) {
+            let layers = json["layers"];
+            if (layers.length != this._layers.length)
+                throw new Error("Incorrect number of layers");
+            for (let i = 0; i < layers.length; i++) {
+                let layerData = layers[i];
+                if (layerData["type"] != this._layers[i].type)
+                    throw new Error(`Layer types don't match. Expected ${this._layers[i].type} but got ${layerData["type"]}`);
+                this._layers[i].fromJson(layerData);
+            }
+        }
     }
     NeuralNet.Network = Network;
 })(NeuralNet || (NeuralNet = {}));
@@ -84,10 +95,11 @@ var NeuralNet;
                 this._target = _target;
             }
             mutate(probability, scale) {
-                for (let i = 0; i < this._target.length; i++) {
+                let weights = this._target.weights;
+                for (let i = 0; i < weights.length; i++) {
                     if (Math.random() < probability) {
                         let delta = (Math.random() * scale * 2) - scale;
-                        this._target[i] += delta;
+                        weights[i] += delta;
                     }
                 }
             }
@@ -100,7 +112,7 @@ var NeuralNet;
             addNeuronLayer(size = 0, activation = null) {
                 let layer = super.addNeuronLayer(size, activation);
                 for (let i = 0; i < layer.neurons.length; i++) {
-                    let mutator = new Mutator(layer.neurons[i].weights);
+                    let mutator = new Mutator(layer.neurons[i]);
                     this._mutators.push(mutator);
                 }
                 return layer;
@@ -137,13 +149,14 @@ var NeuralNet;
         }
         initialiseWeights(weights = null) {
             weights = weights || NeuralNet.Utils.RandomValueGenerator(-1, 1);
-            if (typeof weights === "function") {
-                this.weights = Array(this.inputs.length);
-                for (let i = 0; i < this.weights.length; i++)
-                    this.weights[i] = weights();
+            if (typeof weights !== "function") {
+                weights = NeuralNet.Utils.ArrayValueGenerator(weights);
+                this.initialiseWeights(weights);
             }
             else {
-                this.weights = weights;
+                this.weights = new Array(this.inputs.length);
+                for (let i = 0; i < this.weights.length; i++)
+                    this.weights[i] = weights();
             }
         }
     }
@@ -193,6 +206,15 @@ var NeuralNet;
                 "neurons": neurons
             };
         }
+        fromJson(json) {
+            let neurons = json["neurons"];
+            if (neurons.length != this.neurons.length)
+                throw new Error("Invalid number of neurons for layer.");
+            for (let i = 0; i < neurons.length; i++) {
+                let weights = neurons[i]["weights"];
+                this.neurons[i].initialiseWeights(weights);
+            }
+        }
     }
     NeuralNet.NeuronLayer = NeuronLayer;
 })(NeuralNet || (NeuralNet = {}));
@@ -219,6 +241,8 @@ var NeuralNet;
         }
         toJson() {
             return {};
+        }
+        fromJson(json) {
         }
     }
     NeuralNet.NormalisingLayer = NormalisingLayer;

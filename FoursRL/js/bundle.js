@@ -41,6 +41,7 @@ var Fours;
     }
     class Agent {
         constructor() {
+            this.metadata = {};
             this.net = this.buildNetwork();
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
         }
@@ -55,7 +56,7 @@ var Fours;
             return net;
         }
         mutate() {
-            this.net.mutate(0.05, 0.02);
+            this.net.mutate(0.05, 0.1);
         }
         act(game) {
             if (game.gameover)
@@ -107,6 +108,9 @@ var Fours;
     let gameContainers = [];
     let numGames = 0;
     let numGenerations = 0;
+    let maxGlobalScore = 0;
+    let maxGeneration = 0;
+    let lastGenerationScore = 0;
     let statsOutput;
     const vizWidth = 5;
     const vizHeight = 4;
@@ -117,11 +121,8 @@ var Fours;
         new Fours.Agent(),
         new Fours.Agent()
     ];
-    let agentStats = [];
     for (let i = 0; i < agents.length; i++)
-        agentStats.push({
-            score: 0
-        });
+        agents[i].metadata.score = 0;
     let matchUps = [];
     for (let i = 0; i < agents.length; i++)
         for (let j = 0; j < agents.length; j++)
@@ -160,10 +161,27 @@ var Fours;
         window.requestAnimationFrame(step);
     }
     function nextGeneration() {
-        for (let i = 0; i < agentStats.length; i++)
-            agentStats[i].score = 0;
-        for (let i = 0; i < agents.length; i++)
-            agents[i].mutate();
+        let maxAgent = agents[0];
+        for (let i = 1; i < agents.length; i++)
+            if (maxAgent.metadata.score < agents[i].metadata.score)
+                maxAgent = agents[i];
+        if (maxGlobalScore <= maxAgent.metadata.score) {
+            maxGlobalScore = maxAgent.metadata.score;
+            maxGeneration = numGenerations;
+        }
+        //        else {
+        //            // Always keep the global best agent in agents[0]
+        //            maxAgent = agents[0];
+        //        }
+        lastGenerationScore = maxAgent.metadata.score;
+        let maxAgentWeights = maxAgent.net.toJson();
+        for (let i = 0; i < agents.length; i++) {
+            let agent = agents[i];
+            agent.metadata.score = 0;
+            agent.net.fromJson(maxAgentWeights);
+            if (i != 0)
+                agent.mutate();
+        }
         for (let i = 0; i < gameContainers.length; i++) {
             gameContainers[i].reset();
             gameContainers[i].act();
@@ -172,21 +190,25 @@ var Fours;
         updateStats();
     }
     function updateAgentStats(container) {
-        let agentRedStats = agentStats[agents.indexOf(container.agentRed)];
-        let agentBlueStats = agentStats[agents.indexOf(container.agentBlue)];
+        let agentRedStats = container.agentRed.metadata;
+        let agentBlueStats = container.agentBlue.metadata;
         if (container.game.winner === Fours.PLAYER_RED) {
             agentRedStats.score += 3;
         }
         else if (container.game.winner === Fours.PLAYER_BLUE) {
-            agentBlueStats.score += 3;
+            agentBlueStats.score += 7;
         }
         else {
-            agentRedStats.score += 1;
-            agentBlueStats.score += 1;
+            // As Fours is solved, really punish publish red for for losing and reward blue as if it's a win
+            agentRedStats.score -= 7;
+            agentBlueStats.score += 5;
         }
     }
     function updateStats() {
-        statsOutput.innerHTML = `Generation = ${numGenerations}<br/>Num games = ${numGames}`;
+        statsOutput.innerHTML = `Generation = ${numGenerations}<br/>`
+            + `Num games = ${numGames}<br/>`
+            + `Max Agent Score = ${maxGlobalScore} (${maxGeneration})<br/>`
+            + `Last Generation Score = ${lastGenerationScore}`;
     }
 })(Fours || (Fours = {}));
 var Fours;

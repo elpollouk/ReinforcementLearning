@@ -51,5 +51,16 @@ namespace NeuralNet {
               "neurons" : neurons
             };
         }
+
+        public fromJson(json: any) {
+            let neurons = json["neurons"] as any[];
+            if (neurons.length != this.neurons.length)
+                throw new Error("Invalid number of neurons for layer.");
+
+            for (let i = 0; i < neurons.length; i++) {
+                let weights = neurons[i]["weights"] as number[];
+                this.neurons[i].initialiseWeights(weights);
+            }
+        }
     }
 }

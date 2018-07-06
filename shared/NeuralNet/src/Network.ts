@@ -54,5 +54,19 @@ namespace NeuralNet {
                 "layers" : layers
             };
         }
+
+        public fromJson(json: any) {
+            let layers = json["layers"] as any[];
+            if (layers.length != this._layers.length)
+                throw new Error("Incorrect number of layers");
+
+            for (let i = 0; i < layers.length; i++) {
+                let layerData = layers[i];
+                if (layerData["type"] != this._layers[i].type)
+                    throw new Error(`Layer types don't match. Expected ${this._layers[i].type} but got ${layerData["type"]}`);
+
+                this._layers[i].fromJson(layerData);
+            }
+        }
     }
 }

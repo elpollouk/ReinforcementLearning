@@ -26,13 +26,14 @@ namespace NeuralNet {
         public initialiseWeights(weights: Utils.ValueGenerator = null) {
             weights = weights || Utils.RandomValueGenerator(-1, 1);
             
-            if (typeof weights === "function") {
-                this.weights = Array(this.inputs.length);
-                for (let i = 0; i < this.weights.length; i++)
-                    this.weights[i] = weights();
+            if (typeof weights !== "function") {
+                weights = Utils.ArrayValueGenerator(weights);
+                this.initialiseWeights(weights);
             }
             else {
-                this.weights = weights;
+                this.weights = new Array<number>(this.inputs.length);
+                for (let i = 0; i < this.weights.length; i++)
+                    this.weights[i] = weights();
             }
         }
     }

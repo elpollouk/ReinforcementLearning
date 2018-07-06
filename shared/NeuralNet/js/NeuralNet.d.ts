@@ -14,6 +14,7 @@ declare namespace NeuralNet {
         addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
         addNormalisingLayer(): NormalisingLayer;
         toJson(): any;
+        fromJson(json: any): void;
     }
 }
 declare namespace NeuralNet.Genetic {
@@ -30,6 +31,7 @@ declare namespace NeuralNet {
         setInputs(inputs: number[]): any;
         activate(): number[];
         toJson(): any;
+        fromJson(json: any): any;
     }
 }
 declare namespace NeuralNet {
@@ -57,6 +59,7 @@ declare namespace NeuralNet {
         setInputs(inputs: number[]): void;
         initialiseWeights(weights?: Utils.ValueGenerator): void;
         toJson(): any;
+        fromJson(json: any): void;
     }
 }
 declare namespace NeuralNet {
@@ -67,6 +70,7 @@ declare namespace NeuralNet {
         setInputs(inputs: number[]): void;
         activate(): number[];
         toJson(): any;
+        fromJson(json: any): void;
     }
 }
 declare namespace NeuralNet.Utils {

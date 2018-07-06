@@ -7,5 +7,6 @@ namespace NeuralNet {
         activate(): number[];
 
         toJson(): any;
+        fromJson(json: any);
     }
 }
