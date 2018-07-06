@@ -8,13 +8,15 @@ namespace Fours {
     let numGenerations = 0;
     let maxGlobalScore = 0;
     let maxGeneration = 0;
-    let lastGenerationScore = 0;
+    let lastGenerationScore = "";
     let statsOutput: HTMLElement;
 
-    const vizWidth = 5;
-    const vizHeight = 4;
+    const vizWidth = 6;
+    const vizHeight = 7;
 
     let agents: Agent[] = [
+        new Agent(),
+        new Agent(),
         new Agent(),
         new Agent(),
         new Agent(),
@@ -23,7 +25,7 @@ namespace Fours {
     ];
 
     for (let i = 0; i < agents.length; i++)
-        agents[i].metadata.score = 0;
+        resetMetaData(agents[i]);
     
     let matchUps = [];
 
@@ -46,7 +48,20 @@ namespace Fours {
             root.appendChild(row);
         }
 
+        document.getElementById("fetch").onclick = () => {
+            let json = agents[0].net.toJson();
+            json = JSON.stringify(json);
+            console.log(json);
+        }
+
         step();
+    }
+
+    function resetMetaData(agent: Agent) {
+        agent.metadata.score = 0;
+        agent.metadata.win = 0;
+        agent.metadata.lose = 0;
+        agent.metadata.draw = 0;
     }
 
     function step() {
@@ -81,17 +96,20 @@ namespace Fours {
             maxGlobalScore = maxAgent.metadata.score;
             maxGeneration = numGenerations;
         }
-//        else {
+//        else if (maxAgent.metadata.score < maxGlobalScore) {
 //            // Always keep the global best agent in agents[0]
 //            maxAgent = agents[0];
 //        }
 
-        lastGenerationScore = maxAgent.metadata.score;
+        lastGenerationScore = `${maxAgent.metadata.score}, `
+                            + `W=${maxAgent.metadata.win}, `
+                            + `L=${maxAgent.metadata.lose}, `
+                            + `D=${maxAgent.metadata.draw}`;
 
         let maxAgentWeights = maxAgent.net.toJson();
         for (let i = 0; i < agents.length; i++) {
             let agent = agents[i];
-            agent.metadata.score = 0;
+            resetMetaData(agent);
             agent.net.fromJson(maxAgentWeights);
             if (i != 0)
                 agent.mutate();
@@ -111,15 +129,19 @@ namespace Fours {
         let agentBlueStats = container.agentBlue.metadata;
 
         if (container.game.winner === PLAYER_RED) {
-            agentRedStats.score += 3;
+            agentRedStats.score += 1;
+            agentRedStats.win++;
+            agentBlueStats.lose++;
         }
         else if (container.game.winner === PLAYER_BLUE) {
-            agentBlueStats.score += 7;
+            agentBlueStats.score += 1;
+            agentBlueStats.win++;
+            agentRedStats.lose++;
         }
         else {
-            // As Fours is solved, really punish publish red for for losing and reward blue as if it's a win
-            agentRedStats.score -= 7;
-            agentBlueStats.score += 5;
+            agentBlueStats.score += 1;
+            agentBlueStats.draw++;
+            agentRedStats.draw++;
         }
     }
 

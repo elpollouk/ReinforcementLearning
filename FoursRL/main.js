@@ -7,22 +7,6 @@ var game = null;
 var agent = null;
 
 function main() {
-    function think() {
-        agent.act(game);
-        if (game.gameover) {
-            requestAnimationFrame(reset);
-        }
-        else {
-            requestAnimationFrame(think);
-        }
-    }
-
-    function reset() {
-        game.reset();
-        agent.mutate();
-        requestAnimationFrame(think);
-    }
-
     game = new window.Game(BOARD_COLUMNS, BOARD_ROWS);
     game.onColumnClicked = (g, c) => {
         g.action(c);
@@ -36,7 +20,6 @@ function main() {
     document.getElementById("gameArea").appendChild(game.container);
     document.getElementById("reset").onclick = function () {
         game.reset();
-        agent.mutate();
         document.getElementById("gameArea").classList.remove("gameover");
     };
     document.getElementById("act").onclick = function () {
@@ -49,8 +32,10 @@ function main() {
         game.undo();
         document.getElementById("gameArea").classList.remove("gameover");
     };
-    document.getElementById("train").onclick = function () {
-        think();
+    document.getElementById("setWeights").onclick = function () {
+        let json = document.getElementById("weightsJson").value;
+        json = JSON.parse(json);
+        agent.net.fromJson(json);
     }
 }
 
