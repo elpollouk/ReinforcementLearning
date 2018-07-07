@@ -97,8 +97,7 @@ var Fours;
             else
                 this.greedy(game);
             Agent.featuriseGame(this.net, game, currentPlayer);
-            let value = this.net.activate()[0];
-            return new Fours.TrajectorySample(this.net.inputs, value);
+            return new Fours.TrajectorySample(this.net.inputs);
         }
         greedy(game) {
             if (game.gameover)
@@ -243,16 +242,16 @@ var Fours;
             rewardRed = -1;
             rewardBlue = 0;
         }
-        train(gameContainer.memoryRed, rewardRed, discount);
-        train(gameContainer.memoryBlue, rewardBlue, discount);
+        trainWithMemory(gameContainer.memoryRed, rewardRed, discount);
+        trainWithMemory(gameContainer.memoryBlue, rewardBlue, discount);
     }
-    function train(memory, reward, discount) {
+    function trainWithMemory(memory, reward, discount) {
         while (memory.hasSamples) {
             let sample = memory.pop();
             for (let i = 0; i < sample.inputs.length; i++)
                 network.inputs[i] = sample.inputs[i];
             let value = network.activate()[0];
-            let error = reward - value;
+            let error = value - reward;
             // Back prop
             reward *= discount;
         }
@@ -287,9 +286,8 @@ var Fours;
 var Fours;
 (function (Fours) {
     class TrajectorySample {
-        constructor(inputs, output) {
+        constructor(inputs) {
             this.inputs = inputs;
-            this.output = output;
             this.inputs = this.inputs.slice(0);
         }
     }
@@ -304,8 +302,8 @@ var Fours;
         get hasSamples() {
             return this.memory.length != 0;
         }
-        record(inputs, output) {
-            let sample = new TrajectorySample(inputs, output);
+        record(inputs) {
+            let sample = new TrajectorySample(inputs);
             this.recordSample(sample);
         }
         recordSample(sample) {

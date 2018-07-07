@@ -1,6 +1,6 @@
 namespace Fours {
     export class TrajectorySample {
-        public constructor(public inputs: number[], public output: number) {
+        public constructor(public inputs: number[]) {
             this.inputs = this.inputs.slice(0);
         }
     }
@@ -16,8 +16,8 @@ namespace Fours {
             return this.memory.length != 0;
         }
 
-        public record(inputs: number[], output: number) {
-            let sample = new TrajectorySample(inputs, output);
+        public record(inputs: number[]) {
+            let sample = new TrajectorySample(inputs);
             this.recordSample(sample);
         }
 

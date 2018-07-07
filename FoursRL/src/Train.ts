@@ -122,18 +122,18 @@ namespace Fours {
             rewardBlue = 0;
         }
 
-        train(gameContainer.memoryRed, rewardRed, discount);
-        train(gameContainer.memoryBlue, rewardBlue, discount);
+        trainWithMemory(gameContainer.memoryRed, rewardRed, discount);
+        trainWithMemory(gameContainer.memoryBlue, rewardBlue, discount);
     }
 
-    function train(memory: TrajectoryMemory, reward: number, discount: number) {
+    function trainWithMemory(memory: TrajectoryMemory, reward: number, discount: number) {
         while (memory.hasSamples) {
             let sample = memory.pop();
             for (let i = 0; i < sample.inputs.length; i++)
                 network.inputs[i] = sample.inputs[i];
 
             let value = network.activate()[0];
-            let error = reward - value;
+            let error = value - reward;
 
             // Back prop
 

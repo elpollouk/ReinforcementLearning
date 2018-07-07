@@ -44,8 +44,7 @@ namespace Fours {
 
 
             Agent.featuriseGame(this.net, game, currentPlayer);
-            let value = this.net.activate()[0];
-            return new TrajectorySample(this.net.inputs, value);
+            return new TrajectorySample(this.net.inputs);
         }
 
         public greedy(game: Game) {
