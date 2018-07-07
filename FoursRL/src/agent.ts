@@ -15,15 +15,13 @@ namespace Fours {
 
     export class Agent {
         public readonly metadata: any = {};
-        public net: NeuralNet.Genetic.Network;
-        private _featureWriter: NeuralNet.Utils.ArrayWriter<number>;
+        public net: NeuralNet.Network;
 
-        public constructor(public epsilon: number) {
-            this.net = this.buildNetwork();
-            this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
+        public constructor(public explorationRate: number = 0, net: NeuralNet.Network = null) {
+            this.net = net || Agent.buildNetwork();
         }
 
-        private buildNetwork(): NeuralNet.Genetic.Network {
+        public static buildNetwork(): NeuralNet.Network {
             let net = new NeuralNet.Genetic.Network();
 
             net.setInputSize(86);
@@ -31,20 +29,23 @@ namespace Fours {
             net.addNormalisingLayer();
             net.addNeuronLayer(20);
             net.addNormalisingLayer();
-            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Sigmoid(1/20));
+            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Linear);
 
             return net;
         }
 
-        public mutate() {
-            this.net.mutate(0.05, 0.1);
-        }
+        public act(game: Game): TrajectorySample {
+            let currentPlayer = game.currentPlayer;
 
-        public act(game: Game) {
-            if (Math.random() <  this.epsilon)
+            if (Math.random() <  this.explorationRate)
                 this.random(game);
             else
                 this.greedy(game);
+
+
+            Agent.featuriseGame(this.net, game, currentPlayer);
+            let value = this.net.activate()[0];
+            return new TrajectorySample(this.net.inputs, value);
         }
 
         public greedy(game: Game) {
@@ -54,24 +55,19 @@ namespace Fours {
             let currentPlayer = game.currentPlayer;
 
             let maxPosition = 0;
-            let maxPositionValue = 0;
+            let maxPositionValue = Number.NEGATIVE_INFINITY;
 
             for (let i = 0; i < game.width; i++) {
                 let value: number;
                 
                 if (game.state[i].length < game.height) {
                     game.action(i);
-                    if (game.winner) {
-                        value = 1000;
-                    }
-                    else {
-                        this.featuriseGame(game, currentPlayer);
-                        value = this.net.activate()[0];
-                    }
+                    Agent.featuriseGame(this.net, game, currentPlayer);
+                    value = this.net.activate()[0];
                     game.undo();
                 }
                 else {
-                    value = -1000;
+                    value = Number.NEGATIVE_INFINITY;
                 }
 
                 if (maxPositionValue < value) {
@@ -88,19 +84,19 @@ namespace Fours {
             game.action(action);
         }
 
-        private featuriseGame(game: Game, currentPlayer: string) {
-            this._featureWriter.seek(0);
+        public static featuriseGame(net: NeuralNet.Network, game: Game, currentPlayer: string) {
+            let writer = new NeuralNet.Utils.ArrayWriter<number>(net.inputs);
 
-            writeRedOrBlueFeature(this._featureWriter, currentPlayer);
+            writeRedOrBlueFeature(writer, currentPlayer);
             for (let i = 0; i < game.state.length; i++) {
                 let column = game.state[i];
                 let emptyRows = game.height - column.length;
 
                 for (let j = 0; j < column.length; j++)
-                    writeRedOrBlueFeature(this._featureWriter, column[j]);
+                    writeRedOrBlueFeature(writer, column[j]);
 
                 while (emptyRows --> 0)
-                    writeRedOrBlueFeature(this._featureWriter, null);
+                    writeRedOrBlueFeature(writer, null);
             }
         }
     }

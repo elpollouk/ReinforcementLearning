@@ -3,12 +3,18 @@ namespace NeuralNet.ActivationFunctions {
     export type ActivationFunction = (inputs: number[], weights: number[]) => number;
 
     export function ReLU(inputs: number[], weights: number[]): number {
-        let sum: number = 0;
-        for (let i = 0; i < inputs.length; i++)
-            sum += (inputs[i] * weights[i]);
+        let sum = Linear(inputs, weights);
 
         if (sum < 0)
             sum = 0;
+
+        return sum;
+    }
+
+    export function Linear(inputs: number[], weights: number[]): number {
+        let sum: number = 0;
+        for (let i = 0; i < inputs.length; i++)
+            sum += (inputs[i] * weights[i]);
 
         return sum;
     }

@@ -12,8 +12,9 @@ namespace Fours {
     const vizWidth = 5;
     const vizHeight = 4;
 
-    let agentEvaluator = new Agent(0);
-    let agentExplorer = new Agent(0.1);
+    let network = Agent.buildNetwork();
+    let agentEvaluator = new Agent(0, network);
+    let agentExplorer = new Agent(0.1, network);
 
     resetMetadata(agentEvaluator);
     resetMetadata(agentExplorer);

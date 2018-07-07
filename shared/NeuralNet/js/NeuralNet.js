@@ -3,14 +3,19 @@ var NeuralNet;
     var ActivationFunctions;
     (function (ActivationFunctions) {
         function ReLU(inputs, weights) {
-            let sum = 0;
-            for (let i = 0; i < inputs.length; i++)
-                sum += (inputs[i] * weights[i]);
+            let sum = Linear(inputs, weights);
             if (sum < 0)
                 sum = 0;
             return sum;
         }
         ActivationFunctions.ReLU = ReLU;
+        function Linear(inputs, weights) {
+            let sum = 0;
+            for (let i = 0; i < inputs.length; i++)
+                sum += (inputs[i] * weights[i]);
+            return sum;
+        }
+        ActivationFunctions.Linear = Linear;
         function Sigmoid(scale = 1) {
             return (inputs, weights) => {
                 let value = 0;

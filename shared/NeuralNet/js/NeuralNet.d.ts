@@ -1,6 +1,7 @@
 declare namespace NeuralNet.ActivationFunctions {
     type ActivationFunction = (inputs: number[], weights: number[]) => number;
     function ReLU(inputs: number[], weights: number[]): number;
+    function Linear(inputs: number[], weights: number[]): number;
     function Sigmoid(scale?: number): ActivationFunction;
 }
 declare namespace NeuralNet {

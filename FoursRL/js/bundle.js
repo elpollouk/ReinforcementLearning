@@ -2,6 +2,8 @@ var Fours;
 (function (Fours) {
     class GameContainer {
         constructor(parent, agentRed = null, agentBlue = null) {
+            this.memoryRed = new Fours.TrajectoryMemory();
+            this.memoryBlue = new Fours.TrajectoryMemory();
             let gameArea = parent.ownerDocument.createElement("div");
             gameArea.classList.add("gameArea");
             this.element = parent.ownerDocument.createElement("div");
@@ -13,14 +15,20 @@ var Fours;
             this.agentRed = agentRed || new Fours.Agent(0);
             this.agentBlue = agentBlue || new Fours.Agent(0);
         }
+        actWithAgent(agent, memory) {
+            let sample = agent.act(this.game);
+            memory.recordSample(sample);
+        }
         act() {
             if (this.game.currentPlayer === Fours.PLAYER_RED)
-                this.agentRed.act(this.game);
+                this.actWithAgent(this.agentRed, this.memoryRed);
             else
-                this.agentBlue.act(this.game);
+                this.actWithAgent(this.agentBlue, this.memoryBlue);
         }
         reset() {
             this.game.reset();
+            this.memoryRed.reset();
+            this.memoryBlue.reset();
         }
     }
     Fours.GameContainer = GameContainer;
@@ -40,52 +48,47 @@ var Fours;
         }
     }
     class Agent {
-        constructor(epsilon) {
-            this.epsilon = epsilon;
+        constructor(explorationRate = 0, net = null) {
+            this.explorationRate = explorationRate;
             this.metadata = {};
-            this.net = this.buildNetwork();
-            this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
+            this.net = net || Agent.buildNetwork();
         }
-        buildNetwork() {
+        static buildNetwork() {
             let net = new NeuralNet.Genetic.Network();
             net.setInputSize(86);
             net.addNeuronLayer(43);
             net.addNormalisingLayer();
             net.addNeuronLayer(20);
             net.addNormalisingLayer();
-            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Sigmoid(1 / 20));
+            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Linear);
             return net;
         }
-        mutate() {
-            this.net.mutate(0.05, 0.1);
-        }
         act(game) {
-            if (Math.random() < this.epsilon)
+            let currentPlayer = game.currentPlayer;
+            if (Math.random() < this.explorationRate)
                 this.random(game);
             else
                 this.greedy(game);
+            Agent.featuriseGame(this.net, game, currentPlayer);
+            let value = this.net.activate()[0];
+            return new Fours.TrajectorySample(this.net.inputs, value);
         }
         greedy(game) {
             if (game.gameover)
                 return;
             let currentPlayer = game.currentPlayer;
             let maxPosition = 0;
-            let maxPositionValue = 0;
+            let maxPositionValue = Number.NEGATIVE_INFINITY;
             for (let i = 0; i < game.width; i++) {
                 let value;
                 if (game.state[i].length < game.height) {
                     game.action(i);
-                    if (game.winner) {
-                        value = 1000;
-                    }
-                    else {
-                        this.featuriseGame(game, currentPlayer);
-                        value = this.net.activate()[0];
-                    }
+                    Agent.featuriseGame(this.net, game, currentPlayer);
+                    value = this.net.activate()[0];
                     game.undo();
                 }
                 else {
-                    value = -1000;
+                    value = Number.NEGATIVE_INFINITY;
                 }
                 if (maxPositionValue < value) {
                     maxPositionValue = value;
@@ -98,16 +101,16 @@ var Fours;
             let action = Math.floor(Math.random() * game.state.length);
             game.action(action);
         }
-        featuriseGame(game, currentPlayer) {
-            this._featureWriter.seek(0);
-            writeRedOrBlueFeature(this._featureWriter, currentPlayer);
+        static featuriseGame(net, game, currentPlayer) {
+            let writer = new NeuralNet.Utils.ArrayWriter(net.inputs);
+            writeRedOrBlueFeature(writer, currentPlayer);
             for (let i = 0; i < game.state.length; i++) {
                 let column = game.state[i];
                 let emptyRows = game.height - column.length;
                 for (let j = 0; j < column.length; j++)
-                    writeRedOrBlueFeature(this._featureWriter, column[j]);
+                    writeRedOrBlueFeature(writer, column[j]);
                 while (emptyRows-- > 0)
-                    writeRedOrBlueFeature(this._featureWriter, null);
+                    writeRedOrBlueFeature(writer, null);
             }
         }
     }
@@ -123,8 +126,9 @@ var Fours;
     let statsOutput;
     const vizWidth = 5;
     const vizHeight = 4;
-    let agentEvaluator = new Fours.Agent(0);
-    let agentExplorer = new Fours.Agent(0.1);
+    let network = Fours.Agent.buildNetwork();
+    let agentEvaluator = new Fours.Agent(0, network);
+    let agentExplorer = new Fours.Agent(0.1, network);
     resetMetadata(agentEvaluator);
     resetMetadata(agentExplorer);
     let matchUps = [];
@@ -226,6 +230,36 @@ var Fours;
         statsOutput.innerHTML = `Num games = ${numGames}<br/>`
             + `Results = ${results}`;
     }
+})(Fours || (Fours = {}));
+var Fours;
+(function (Fours) {
+    class TrajectorySample {
+        constructor(inputs, output) {
+            this.inputs = inputs;
+            this.output = output;
+            this.inputs = this.inputs.slice(0);
+        }
+    }
+    Fours.TrajectorySample = TrajectorySample;
+    class TrajectoryMemory {
+        constructor() {
+            this.memory = [];
+        }
+        reset() {
+            this.memory = [];
+        }
+        record(inputs, output) {
+            let sample = new TrajectorySample(inputs, output);
+            this.recordSample(sample);
+        }
+        recordSample(sample) {
+            this.memory.push(sample);
+        }
+        pop() {
+            return this.memory.pop();
+        }
+    }
+    Fours.TrajectoryMemory = TrajectoryMemory;
 })(Fours || (Fours = {}));
 var Fours;
 (function (Fours) {
