@@ -86,9 +86,7 @@ namespace Fours {
     }
 
     function resetMetadata(agent: Agent) {
-        agent.metadata.win = 0;
-        agent.metadata.lose = 0;
-        agent.metadata.draw = 0;
+        agent.metadata.results = new SlidingWindowSum(100, [0, 0, 0]);
     }
 
     function step() {
@@ -109,27 +107,27 @@ namespace Fours {
     }
 
     function updateEvaluatorStats() {
-        let data = agentEvaluator.metadata;
-        results = `W=${data.win}, `
-                + `L=${data.lose}, `
-                + `D=${data.draw}`;
+        let data = agentEvaluator.metadata.results.values as number[];
+        results = `W=${data[0]}, `
+                + `L=${data[1]}, `
+                + `D=${data[2]}`;
     }
 
     function updateAgentStats(container: GameContainer) {
-        let agentRedStats = container.agentRed.metadata;
-        let agentBlueStats = container.agentBlue.metadata;
+        let agentRedResults = container.agentRed.metadata.results as SlidingWindowSum;
+        let agentBlueResults = container.agentBlue.metadata.results as SlidingWindowSum;
 
         if (container.game.winner === PLAYER_RED) {
-            agentRedStats.win++;
-            agentBlueStats.lose++;
+            agentRedResults.add([1, 0, 0]);
+            agentBlueResults.add([0, 1, 0]);
         }
         else if (container.game.winner === PLAYER_BLUE) {
-            agentBlueStats.win++;
-            agentRedStats.lose++;
+            agentBlueResults.add([1, 0, 0]);
+            agentRedResults.add([0, 1, 0]);
         }
         else {
-            agentBlueStats.draw++;
-            agentRedStats.draw++;
+            agentBlueResults.add([0, 0, 1]);
+            agentRedResults.add([0, 0, 1]);
         }
     }
 

@@ -12,8 +12,8 @@ var Fours;
             gameArea.appendChild(this.game.container);
             this.element.appendChild(gameArea);
             parent.appendChild(this.element);
-            this.agentRed = agentRed || new Fours.Agent(0);
-            this.agentBlue = agentBlue || new Fours.Agent(0);
+            this.agentRed = agentRed || new Fours.Agent();
+            this.agentBlue = agentBlue || new Fours.Agent();
         }
         actWithAgent(agent, memory) {
             let sample = agent.act(this.game);
@@ -32,6 +32,33 @@ var Fours;
         }
     }
     Fours.GameContainer = GameContainer;
+})(Fours || (Fours = {}));
+var Fours;
+(function (Fours) {
+    class SlidingWindowSum {
+        constructor(windowSize, initial = null) {
+            this.windowSize = windowSize;
+            this._window = [];
+            if (initial)
+                this.add(initial);
+        }
+        add(values) {
+            if (!this.values) {
+                this.values = values.slice(0);
+            }
+            else {
+                for (let i = 0; i < values.length; i++)
+                    this.values[i] += values[i];
+                if (this._window.length == this.windowSize) {
+                    let old = this._window.shift();
+                    for (let i = 0; i < old.length; i++)
+                        this.values[i] -= old[i];
+                }
+            }
+            this._window.push(values);
+        }
+    }
+    Fours.SlidingWindowSum = SlidingWindowSum;
 })(Fours || (Fours = {}));
 /// <reference path="../../shared/NeuralNet/js/NeuralNet.d.ts" />
 var Fours;
@@ -186,9 +213,7 @@ var Fours;
         };
     }
     function resetMetadata(agent) {
-        agent.metadata.win = 0;
-        agent.metadata.lose = 0;
-        agent.metadata.draw = 0;
+        agent.metadata.results = new Fours.SlidingWindowSum(100, [0, 0, 0]);
     }
     function step() {
         for (let i = 0; i < gameContainers.length; i++) {
@@ -205,25 +230,25 @@ var Fours;
             window.requestAnimationFrame(step);
     }
     function updateEvaluatorStats() {
-        let data = agentEvaluator.metadata;
-        results = `W=${data.win}, `
-            + `L=${data.lose}, `
-            + `D=${data.draw}`;
+        let data = agentEvaluator.metadata.results.values;
+        results = `W=${data[0]}, `
+            + `L=${data[1]}, `
+            + `D=${data[2]}`;
     }
     function updateAgentStats(container) {
-        let agentRedStats = container.agentRed.metadata;
-        let agentBlueStats = container.agentBlue.metadata;
+        let agentRedResults = container.agentRed.metadata.results;
+        let agentBlueResults = container.agentBlue.metadata.results;
         if (container.game.winner === Fours.PLAYER_RED) {
-            agentRedStats.win++;
-            agentBlueStats.lose++;
+            agentRedResults.add([1, 0, 0]);
+            agentBlueResults.add([0, 1, 0]);
         }
         else if (container.game.winner === Fours.PLAYER_BLUE) {
-            agentBlueStats.win++;
-            agentRedStats.lose++;
+            agentBlueResults.add([1, 0, 0]);
+            agentRedResults.add([0, 1, 0]);
         }
         else {
-            agentBlueStats.draw++;
-            agentRedStats.draw++;
+            agentBlueResults.add([0, 0, 1]);
+            agentRedResults.add([0, 0, 1]);
         }
     }
     function updateStats() {
