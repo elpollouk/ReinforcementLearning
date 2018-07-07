@@ -18,7 +18,7 @@ namespace Fours {
         public net: NeuralNet.Genetic.Network;
         private _featureWriter: NeuralNet.Utils.ArrayWriter<number>;
 
-        public constructor() {
+        public constructor(public epsilon: number) {
             this.net = this.buildNetwork();
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
         }
@@ -41,6 +41,13 @@ namespace Fours {
         }
 
         public act(game: Game) {
+            if (Math.random() <  this.epsilon)
+                this.random(game);
+            else
+                this.greedy(game);
+        }
+
+        public greedy(game: Game) {
             if (game.gameover)
                 return;
 
@@ -74,6 +81,11 @@ namespace Fours {
             }
 
             game.action(maxPosition);
+        }
+
+        public random(game: Game) {
+            let action = Math.floor(Math.random() * game.state.length);
+            game.action(action);
         }
 
         private featuriseGame(game: Game, currentPlayer: string) {

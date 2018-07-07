@@ -3,36 +3,39 @@
 namespace Fours {
 
     let gameContainers: GameContainer[] = [];
+    let paused = false;
 
     let numGames = 0;
-    let numGenerations = 0;
-    let maxGlobalScore = 0;
-    let maxGeneration = 0;
-    let lastGenerationScore = "";
+    let results = "";
     let statsOutput: HTMLElement;
 
-    const vizWidth = 6;
-    const vizHeight = 7;
+    const vizWidth = 5;
+    const vizHeight = 4;
 
-    let agents: Agent[] = [
-        new Agent(),
-        new Agent(),
-        new Agent(),
-        new Agent(),
-        new Agent(),
-        new Agent(),
-        new Agent()
-    ];
+    let agentEvaluator = new Agent(0);
+    let agentExplorer = new Agent(0.1);
 
-    for (let i = 0; i < agents.length; i++)
-        resetMetaData(agents[i]);
+    resetMetadata(agentEvaluator);
+    resetMetadata(agentExplorer);
     
-    let matchUps = [];
+    let matchUps: Agent[][] = [];
+    for (let i = 0; i < vizWidth * vizHeight; i++) {
+        let match: Agent[];
+        switch (i % 4) {
+            case 0:
+                match = [agentEvaluator, agentExplorer];
+                break;
 
-    for (let i = 0; i < agents.length; i++)
-        for (let j = 0; j < agents.length; j++)
-            if (i != j)
-                matchUps.push([agents[i], agents[j]]);
+            case 1:
+                match = [agentExplorer, agentEvaluator];
+                break;
+
+            default:
+                match = [agentExplorer, agentExplorer];
+        }
+
+        matchUps.push(match);
+    }
 
     export function TrainMain() {
         statsOutput = document.getElementById("stats");
@@ -48,80 +51,67 @@ namespace Fours {
             root.appendChild(row);
         }
 
-        document.getElementById("fetch").onclick = () => {
-            let json = agents[0].net.toJson();
-            json = JSON.stringify(json);
-            console.log(json);
-        }
+        bindUi();
 
         step();
     }
 
-    function resetMetaData(agent: Agent) {
-        agent.metadata.score = 0;
+    function bindUi() {
+        document.getElementById("fetch").onclick = () => {
+            let json = agentEvaluator.net.toJson();
+            json = JSON.stringify(json);
+            console.log(json);
+        }
+
+        let stepButton = document.getElementById("step") as HTMLButtonElement;
+        let pauseButton = document.getElementById("pause");
+        pauseButton.onclick = () => {
+            paused = !paused;
+
+            if (paused) {
+                pauseButton.innerText = "Unpause";
+            }
+            else {
+                pauseButton.innerText = "Pause";
+                step();
+            }
+
+            stepButton.disabled = !paused;
+        }
+
+        stepButton.onclick = () => {
+            step();
+        }
+    }
+
+    function resetMetadata(agent: Agent) {
         agent.metadata.win = 0;
         agent.metadata.lose = 0;
         agent.metadata.draw = 0;
     }
 
     function step() {
-        let hasActed = false;
         for (let i = 0; i < gameContainers.length; i++) {
-            if (!gameContainers[i].game.gameover) {
-                gameContainers[i].act();
-                hasActed = true;
-
-                if (gameContainers[i].game.gameover) {
-                    numGames++;
-                    updateAgentStats(gameContainers[i]);
-                    updateStats();
-                }
+            if (gameContainers[i].game.gameover) {
+                numGames++;
+                updateAgentStats(gameContainers[i]);
+                updateEvaluatorStats();
+                updateStats();
+                gameContainers[i].reset();
             }
-        }
 
-        if (!hasActed)
-            nextGeneration();
-
-        window.requestAnimationFrame(step);
-    }
-
-    function nextGeneration() {
-        let maxAgent = agents[0];
-
-        for (let i = 1; i < agents.length; i++)
-            if (maxAgent.metadata.score < agents[i].metadata.score)
-                maxAgent = agents[i];
-
-        if (maxGlobalScore <= maxAgent.metadata.score) {
-            maxGlobalScore = maxAgent.metadata.score;
-            maxGeneration = numGenerations;
-        }
-//        else if (maxAgent.metadata.score < maxGlobalScore) {
-//            // Always keep the global best agent in agents[0]
-//            maxAgent = agents[0];
-//        }
-
-        lastGenerationScore = `${maxAgent.metadata.score}, `
-                            + `W=${maxAgent.metadata.win}, `
-                            + `L=${maxAgent.metadata.lose}, `
-                            + `D=${maxAgent.metadata.draw}`;
-
-        let maxAgentWeights = maxAgent.net.toJson();
-        for (let i = 0; i < agents.length; i++) {
-            let agent = agents[i];
-            resetMetaData(agent);
-            agent.net.fromJson(maxAgentWeights);
-            if (i != 0)
-                agent.mutate();
-        }
-
-        for (let i = 0; i < gameContainers.length; i++) {
-            gameContainers[i].reset();
             gameContainers[i].act();
         }
 
-        numGenerations++;
-        updateStats();
+        if (!paused)
+            window.requestAnimationFrame(step);
+    }
+
+    function updateEvaluatorStats() {
+        let data = agentEvaluator.metadata;
+        results = `W=${data.win}, `
+                + `L=${data.lose}, `
+                + `D=${data.draw}`;
     }
 
     function updateAgentStats(container: GameContainer) {
@@ -129,26 +119,21 @@ namespace Fours {
         let agentBlueStats = container.agentBlue.metadata;
 
         if (container.game.winner === PLAYER_RED) {
-            agentRedStats.score += 1;
             agentRedStats.win++;
             agentBlueStats.lose++;
         }
         else if (container.game.winner === PLAYER_BLUE) {
-            agentBlueStats.score += 1;
             agentBlueStats.win++;
             agentRedStats.lose++;
         }
         else {
-            agentBlueStats.score += 1;
             agentBlueStats.draw++;
             agentRedStats.draw++;
         }
     }
 
     function updateStats() {
-        statsOutput.innerHTML = `Generation = ${numGenerations}<br/>`
-                              + `Num games = ${numGames}<br/>`
-                              + `Max Agent Score = ${maxGlobalScore} (${maxGeneration})<br/>`
-                              + `Last Generation Score = ${lastGenerationScore}`;
+        statsOutput.innerHTML = `Num games = ${numGames}<br/>`
+                              + `Results = ${results}`;
     }
 }

@@ -10,8 +10,8 @@ var Fours;
             gameArea.appendChild(this.game.container);
             this.element.appendChild(gameArea);
             parent.appendChild(this.element);
-            this.agentRed = agentRed || new Fours.Agent();
-            this.agentBlue = agentBlue || new Fours.Agent();
+            this.agentRed = agentRed || new Fours.Agent(0);
+            this.agentBlue = agentBlue || new Fours.Agent(0);
         }
         act() {
             if (this.game.currentPlayer === Fours.PLAYER_RED)
@@ -40,7 +40,8 @@ var Fours;
         }
     }
     class Agent {
-        constructor() {
+        constructor(epsilon) {
+            this.epsilon = epsilon;
             this.metadata = {};
             this.net = this.buildNetwork();
             this._featureWriter = new NeuralNet.Utils.ArrayWriter(this.net.inputs);
@@ -59,6 +60,12 @@ var Fours;
             this.net.mutate(0.05, 0.1);
         }
         act(game) {
+            if (Math.random() < this.epsilon)
+                this.random(game);
+            else
+                this.greedy(game);
+        }
+        greedy(game) {
             if (game.gameover)
                 return;
             let currentPlayer = game.currentPlayer;
@@ -87,6 +94,10 @@ var Fours;
             }
             game.action(maxPosition);
         }
+        random(game) {
+            let action = Math.floor(Math.random() * game.state.length);
+            game.action(action);
+        }
         featuriseGame(game, currentPlayer) {
             this._featureWriter.seek(0);
             writeRedOrBlueFeature(this._featureWriter, currentPlayer);
@@ -106,30 +117,31 @@ var Fours;
 var Fours;
 (function (Fours) {
     let gameContainers = [];
+    let paused = false;
     let numGames = 0;
-    let numGenerations = 0;
-    let maxGlobalScore = 0;
-    let maxGeneration = 0;
-    let lastGenerationScore = "";
+    let results = "";
     let statsOutput;
-    const vizWidth = 6;
-    const vizHeight = 7;
-    let agents = [
-        new Fours.Agent(),
-        new Fours.Agent(),
-        new Fours.Agent(),
-        new Fours.Agent(),
-        new Fours.Agent(),
-        new Fours.Agent(),
-        new Fours.Agent()
-    ];
-    for (let i = 0; i < agents.length; i++)
-        resetMetaData(agents[i]);
+    const vizWidth = 5;
+    const vizHeight = 4;
+    let agentEvaluator = new Fours.Agent(0);
+    let agentExplorer = new Fours.Agent(0.1);
+    resetMetadata(agentEvaluator);
+    resetMetadata(agentExplorer);
     let matchUps = [];
-    for (let i = 0; i < agents.length; i++)
-        for (let j = 0; j < agents.length; j++)
-            if (i != j)
-                matchUps.push([agents[i], agents[j]]);
+    for (let i = 0; i < vizWidth * vizHeight; i++) {
+        let match;
+        switch (i % 4) {
+            case 0:
+                match = [agentEvaluator, agentExplorer];
+                break;
+            case 1:
+                match = [agentExplorer, agentEvaluator];
+                break;
+            default:
+                match = [agentExplorer, agentExplorer];
+        }
+        matchUps.push(match);
+    }
     function TrainMain() {
         statsOutput = document.getElementById("stats");
         let root = document.getElementById("gamesHolder");
@@ -142,93 +154,77 @@ var Fours;
             }
             root.appendChild(row);
         }
-        document.getElementById("fetch").onclick = () => {
-            let json = agents[0].net.toJson();
-            json = JSON.stringify(json);
-            console.log(json);
-        };
+        bindUi();
         step();
     }
     Fours.TrainMain = TrainMain;
-    function resetMetaData(agent) {
-        agent.metadata.score = 0;
+    function bindUi() {
+        document.getElementById("fetch").onclick = () => {
+            let json = agentEvaluator.net.toJson();
+            json = JSON.stringify(json);
+            console.log(json);
+        };
+        let stepButton = document.getElementById("step");
+        let pauseButton = document.getElementById("pause");
+        pauseButton.onclick = () => {
+            paused = !paused;
+            if (paused) {
+                pauseButton.innerText = "Unpause";
+            }
+            else {
+                pauseButton.innerText = "Pause";
+                step();
+            }
+            stepButton.disabled = !paused;
+        };
+        stepButton.onclick = () => {
+            step();
+        };
+    }
+    function resetMetadata(agent) {
         agent.metadata.win = 0;
         agent.metadata.lose = 0;
         agent.metadata.draw = 0;
     }
     function step() {
-        let hasActed = false;
         for (let i = 0; i < gameContainers.length; i++) {
-            if (!gameContainers[i].game.gameover) {
-                gameContainers[i].act();
-                hasActed = true;
-                if (gameContainers[i].game.gameover) {
-                    numGames++;
-                    updateAgentStats(gameContainers[i]);
-                    updateStats();
-                }
+            if (gameContainers[i].game.gameover) {
+                numGames++;
+                updateAgentStats(gameContainers[i]);
+                updateEvaluatorStats();
+                updateStats();
+                gameContainers[i].reset();
             }
-        }
-        if (!hasActed)
-            nextGeneration();
-        window.requestAnimationFrame(step);
-    }
-    function nextGeneration() {
-        let maxAgent = agents[0];
-        for (let i = 1; i < agents.length; i++)
-            if (maxAgent.metadata.score < agents[i].metadata.score)
-                maxAgent = agents[i];
-        if (maxGlobalScore <= maxAgent.metadata.score) {
-            maxGlobalScore = maxAgent.metadata.score;
-            maxGeneration = numGenerations;
-        }
-        //        else if (maxAgent.metadata.score < maxGlobalScore) {
-        //            // Always keep the global best agent in agents[0]
-        //            maxAgent = agents[0];
-        //        }
-        lastGenerationScore = `${maxAgent.metadata.score}, `
-            + `W=${maxAgent.metadata.win}, `
-            + `L=${maxAgent.metadata.lose}, `
-            + `D=${maxAgent.metadata.draw}`;
-        let maxAgentWeights = maxAgent.net.toJson();
-        for (let i = 0; i < agents.length; i++) {
-            let agent = agents[i];
-            resetMetaData(agent);
-            agent.net.fromJson(maxAgentWeights);
-            if (i != 0)
-                agent.mutate();
-        }
-        for (let i = 0; i < gameContainers.length; i++) {
-            gameContainers[i].reset();
             gameContainers[i].act();
         }
-        numGenerations++;
-        updateStats();
+        if (!paused)
+            window.requestAnimationFrame(step);
+    }
+    function updateEvaluatorStats() {
+        let data = agentEvaluator.metadata;
+        results = `W=${data.win}, `
+            + `L=${data.lose}, `
+            + `D=${data.draw}`;
     }
     function updateAgentStats(container) {
         let agentRedStats = container.agentRed.metadata;
         let agentBlueStats = container.agentBlue.metadata;
         if (container.game.winner === Fours.PLAYER_RED) {
-            agentRedStats.score += 1;
             agentRedStats.win++;
             agentBlueStats.lose++;
         }
         else if (container.game.winner === Fours.PLAYER_BLUE) {
-            agentBlueStats.score += 1;
             agentBlueStats.win++;
             agentRedStats.lose++;
         }
         else {
-            agentBlueStats.score += 1;
             agentBlueStats.draw++;
             agentRedStats.draw++;
         }
     }
     function updateStats() {
-        statsOutput.innerHTML = `Generation = ${numGenerations}<br/>`
-            + `Num games = ${numGames}<br/>`
-            + `Max Agent Score = ${maxGlobalScore} (${maxGeneration})<br/>`
-            + `Last Generation Score = ${lastGenerationScore}`;
+        statsOutput.innerHTML = `Num games = ${numGames}<br/>`
+            + `Results = ${results}`;
     }
 })(Fours || (Fours = {}));
 var Fours;

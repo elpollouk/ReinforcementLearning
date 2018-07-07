@@ -18,8 +18,8 @@ namespace Fours {
             this.element.appendChild(gameArea);
             parent.appendChild(this.element);
 
-            this.agentRed = agentRed || new Agent();
-            this.agentBlue = agentBlue || new Agent();
+            this.agentRed = agentRed || new Agent(0);
+            this.agentBlue = agentBlue || new Agent(0);
         }
 
         public act() {
