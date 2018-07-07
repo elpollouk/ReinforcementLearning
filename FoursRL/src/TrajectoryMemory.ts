@@ -12,6 +12,10 @@ namespace Fours {
             this.memory = [];
         }
 
+        public get hasSamples(): boolean {
+            return this.memory.length != 0;
+        }
+
         public record(inputs: number[], output: number) {
             let sample = new TrajectorySample(inputs, output);
             this.recordSample(sample);

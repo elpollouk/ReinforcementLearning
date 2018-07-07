@@ -1,6 +1,9 @@
 /// <reference path="agent.ts" />
 
 namespace Fours {
+    const VIZWIDTH = 5;
+    const VIZHEIGHT = 4;
+    const DISCOUNT = 0.9;
 
     let gameContainers: GameContainer[] = [];
     let paused = false;
@@ -8,9 +11,6 @@ namespace Fours {
     let numGames = 0;
     let results = "";
     let statsOutput: HTMLElement;
-
-    const vizWidth = 5;
-    const vizHeight = 4;
 
     let network = Agent.buildNetwork();
     let agentEvaluator = new Agent(0, network);
@@ -20,7 +20,7 @@ namespace Fours {
     resetMetadata(agentExplorer);
     
     let matchUps: Agent[][] = [];
-    for (let i = 0; i < vizWidth * vizHeight; i++) {
+    for (let i = 0; i < VIZWIDTH * VIZHEIGHT; i++) {
         let match: Agent[];
         switch (i % 4) {
             case 0:
@@ -42,9 +42,9 @@ namespace Fours {
         statsOutput = document.getElementById("stats");
         let root = document.getElementById("gamesHolder");
 
-        for (let y = 0; y < vizHeight; y++) {
+        for (let y = 0; y < VIZHEIGHT; y++) {
             let row = document.createElement("div");
-            for (let i = 0; i < vizWidth; i++) {
+            for (let i = 0; i < VIZWIDTH; i++) {
                 let agents = matchUps.shift();
                 let container = new GameContainer(row, agents[0], agents[1]);
                 gameContainers.push(container);
@@ -96,6 +96,8 @@ namespace Fours {
                 updateAgentStats(gameContainers[i]);
                 updateEvaluatorStats();
                 updateStats();
+
+                trainWithContainer(gameContainers[i], DISCOUNT);
                 gameContainers[i].reset();
             }
 
@@ -104,6 +106,39 @@ namespace Fours {
 
         if (!paused)
             window.requestAnimationFrame(step);
+    }
+
+    function trainWithContainer(gameContainer: GameContainer, discount: number) {
+        let game = gameContainer.game;
+        let rewardRed = 0;
+        let rewardBlue = 0;
+
+        if (game.winner === PLAYER_RED) {
+            rewardRed = 1;
+            rewardBlue = -1;
+        }
+        else if (game.winner === PLAYER_BLUE) {
+            rewardRed = -1;
+            rewardBlue = 0;
+        }
+
+        train(gameContainer.memoryRed, rewardRed, discount);
+        train(gameContainer.memoryBlue, rewardBlue, discount);
+    }
+
+    function train(memory: TrajectoryMemory, reward: number, discount: number) {
+        while (memory.hasSamples) {
+            let sample = memory.pop();
+            for (let i = 0; i < sample.inputs.length; i++)
+                network.inputs[i] = sample.inputs[i];
+
+            let value = network.activate()[0];
+            let error = reward - value;
+
+            // Back prop
+
+            reward *= discount;
+        }
     }
 
     function updateEvaluatorStats() {

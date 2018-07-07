@@ -146,20 +146,21 @@ var Fours;
 /// <reference path="agent.ts" />
 var Fours;
 (function (Fours) {
+    const VIZWIDTH = 5;
+    const VIZHEIGHT = 4;
+    const DISCOUNT = 0.9;
     let gameContainers = [];
     let paused = false;
     let numGames = 0;
     let results = "";
     let statsOutput;
-    const vizWidth = 5;
-    const vizHeight = 4;
     let network = Fours.Agent.buildNetwork();
     let agentEvaluator = new Fours.Agent(0, network);
     let agentExplorer = new Fours.Agent(0.1, network);
     resetMetadata(agentEvaluator);
     resetMetadata(agentExplorer);
     let matchUps = [];
-    for (let i = 0; i < vizWidth * vizHeight; i++) {
+    for (let i = 0; i < VIZWIDTH * VIZHEIGHT; i++) {
         let match;
         switch (i % 4) {
             case 0:
@@ -176,9 +177,9 @@ var Fours;
     function TrainMain() {
         statsOutput = document.getElementById("stats");
         let root = document.getElementById("gamesHolder");
-        for (let y = 0; y < vizHeight; y++) {
+        for (let y = 0; y < VIZHEIGHT; y++) {
             let row = document.createElement("div");
-            for (let i = 0; i < vizWidth; i++) {
+            for (let i = 0; i < VIZWIDTH; i++) {
                 let agents = matchUps.shift();
                 let container = new Fours.GameContainer(row, agents[0], agents[1]);
                 gameContainers.push(container);
@@ -222,12 +223,39 @@ var Fours;
                 updateAgentStats(gameContainers[i]);
                 updateEvaluatorStats();
                 updateStats();
+                trainWithContainer(gameContainers[i], DISCOUNT);
                 gameContainers[i].reset();
             }
             gameContainers[i].act();
         }
         if (!paused)
             window.requestAnimationFrame(step);
+    }
+    function trainWithContainer(gameContainer, discount) {
+        let game = gameContainer.game;
+        let rewardRed = 0;
+        let rewardBlue = 0;
+        if (game.winner === Fours.PLAYER_RED) {
+            rewardRed = 1;
+            rewardBlue = -1;
+        }
+        else if (game.winner === Fours.PLAYER_BLUE) {
+            rewardRed = -1;
+            rewardBlue = 0;
+        }
+        train(gameContainer.memoryRed, rewardRed, discount);
+        train(gameContainer.memoryBlue, rewardBlue, discount);
+    }
+    function train(memory, reward, discount) {
+        while (memory.hasSamples) {
+            let sample = memory.pop();
+            for (let i = 0; i < sample.inputs.length; i++)
+                network.inputs[i] = sample.inputs[i];
+            let value = network.activate()[0];
+            let error = reward - value;
+            // Back prop
+            reward *= discount;
+        }
     }
     function updateEvaluatorStats() {
         let data = agentEvaluator.metadata.results.values;
@@ -272,6 +300,9 @@ var Fours;
         }
         reset() {
             this.memory = [];
+        }
+        get hasSamples() {
+            return this.memory.length != 0;
         }
         record(inputs, output) {
             let sample = new TrajectorySample(inputs, output);
