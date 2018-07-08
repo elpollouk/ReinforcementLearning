@@ -43,17 +43,22 @@ var Fours;
                 this.add(initial);
         }
         add(values) {
-            if (!this.values) {
-                this.values = values.slice(0);
+            if (!this.sum) {
+                this.sum = values.slice(0);
+                this.average = values.slice(0);
             }
             else {
-                for (let i = 0; i < values.length; i++)
-                    this.values[i] += values[i];
-                if (this._window.length == this.windowSize) {
+                let sampleSize = values.length;
+                let numSamples = this._window.length;
+                for (let i = 0; i < sampleSize; i++)
+                    this.sum[i] += values[i];
+                if (numSamples == this.windowSize) {
                     let old = this._window.shift();
-                    for (let i = 0; i < old.length; i++)
-                        this.values[i] -= old[i];
+                    for (let i = 0; i < sampleSize; i++)
+                        this.sum[i] -= old[i];
                 }
+                for (let i = 0; i < sampleSize; i++)
+                    this.average[i] = this.sum[i] / numSamples;
             }
             this._window.push(values);
         }
@@ -143,6 +148,7 @@ var Fours;
     Fours.Agent = Agent;
 })(Fours || (Fours = {}));
 /// <reference path="agent.ts" />
+/// <reference path="SlidingWindowSum.ts" />
 var Fours;
 (function (Fours) {
     const VIZWIDTH = 5;
@@ -152,6 +158,7 @@ var Fours;
     let paused = false;
     let numGames = 0;
     let results = "";
+    let averageError = new Fours.SlidingWindowSum(250, [0]);
     let statsOutput;
     let network = Fours.Agent.buildNetwork();
     let agentEvaluator = new Fours.Agent(0, network);
@@ -252,12 +259,12 @@ var Fours;
                 network.inputs[i] = sample.inputs[i];
             let value = network.activate()[0];
             let error = value - reward;
-            // Back prop
+            averageError.add([error]);
             reward *= discount;
         }
     }
     function updateEvaluatorStats() {
-        let data = agentEvaluator.metadata.results.values;
+        let data = agentEvaluator.metadata.results.sum;
         results = `W=${data[0]}, `
             + `L=${data[1]}, `
             + `D=${data[2]}`;
@@ -280,7 +287,8 @@ var Fours;
     }
     function updateStats() {
         statsOutput.innerHTML = `Num games = ${numGames}<br/>`
-            + `Results = ${results}`;
+            + `Results = ${results}<br />`
+            + `Average error = ${averageError.average[0].toFixed(3)}`;
     }
 })(Fours || (Fours = {}));
 var Fours;

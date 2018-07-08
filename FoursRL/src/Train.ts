@@ -1,4 +1,5 @@
 /// <reference path="agent.ts" />
+/// <reference path="SlidingWindowSum.ts" />
 
 namespace Fours {
     const VIZWIDTH = 5;
@@ -10,6 +11,7 @@ namespace Fours {
 
     let numGames = 0;
     let results = "";
+    let averageError = new SlidingWindowSum(250, [0]);
     let statsOutput: HTMLElement;
 
     let network = Agent.buildNetwork();
@@ -135,14 +137,14 @@ namespace Fours {
             let value = network.activate()[0];
             let error = value - reward;
 
-            // Back prop
+            averageError.add([error]);
 
             reward *= discount;
         }
     }
 
     function updateEvaluatorStats() {
-        let data = agentEvaluator.metadata.results.values as number[];
+        let data = agentEvaluator.metadata.results.sum as number[];
         results = `W=${data[0]}, `
                 + `L=${data[1]}, `
                 + `D=${data[2]}`;
@@ -168,6 +170,7 @@ namespace Fours {
 
     function updateStats() {
         statsOutput.innerHTML = `Num games = ${numGames}<br/>`
-                              + `Results = ${results}`;
+                              + `Results = ${results}<br />`
+                              + `Average error = ${averageError.average[0].toFixed(3)}`;
     }
 }
