@@ -7,11 +7,15 @@ namespace NeuralNet {
 
         public constructor(size = 0, activation: ActivationFunctions.ActivationFunction = null) {
             while (size --> 0) {
-                let neuron = new Neuron(activation);
+                let neuron = this.constructNeuron(activation);
                 this.addNeuron(neuron);
             }
 
             this.initialiseWeights();
+        }
+
+        protected constructNeuron(activation: ActivationFunctions.ActivationFunction) {
+            return new Neuron(activation);
         }
 
         public activate(): number[] {

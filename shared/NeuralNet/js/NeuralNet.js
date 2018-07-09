@@ -30,6 +30,102 @@ var NeuralNet;
 })(NeuralNet || (NeuralNet = {}));
 var NeuralNet;
 (function (NeuralNet) {
+    class Neuron {
+        constructor(_activation = null) {
+            this._activation = _activation;
+            this._output = 0;
+            this.inputs = [];
+            this.weights = [];
+            this._activation = this._activation || NeuralNet.ActivationFunctions.ReLU;
+        }
+        get output() {
+            return this._output;
+        }
+        activate() {
+            this._output = this._activation(this.inputs, this.weights);
+            return this._output;
+        }
+        setInputs(inputs, weights = null) {
+            this.inputs = inputs;
+            if (weights)
+                this.initialiseWeights(weights);
+        }
+        initialiseWeights(weights = null) {
+            weights = weights || NeuralNet.Utils.RandomValueGenerator(-1, 1);
+            if (typeof weights !== "function") {
+                weights = NeuralNet.Utils.ArrayValueGenerator(weights);
+                this.initialiseWeights(weights);
+            }
+            else {
+                this.weights = new Array(this.inputs.length);
+                for (let i = 0; i < this.weights.length; i++)
+                    this.weights[i] = weights();
+            }
+        }
+    }
+    NeuralNet.Neuron = Neuron;
+})(NeuralNet || (NeuralNet = {}));
+var NeuralNet;
+(function (NeuralNet) {
+    class NeuronLayer {
+        constructor(size = 0, activation = null) {
+            this.type = "neuron";
+            this.inputs = [];
+            this.outputs = [];
+            this.neurons = [];
+            while (size-- > 0) {
+                let neuron = this.constructNeuron(activation);
+                this.addNeuron(neuron);
+            }
+            this.initialiseWeights();
+        }
+        constructNeuron(activation) {
+            return new NeuralNet.Neuron(activation);
+        }
+        activate() {
+            for (let i = 0; i < this.neurons.length; i++)
+                this.outputs[i] = this.neurons[i].activate();
+            return this.outputs;
+        }
+        addNeuron(neuron) {
+            this.neurons.push(neuron);
+            this.outputs.push(0);
+            neuron.setInputs(this.inputs);
+        }
+        setInputs(inputs) {
+            this.inputs = inputs;
+            for (let i = 0; i < this.neurons.length; i++)
+                this.neurons[i].setInputs(inputs);
+        }
+        initialiseWeights(weights = null) {
+            for (let i = 0; i < this.neurons.length; i++)
+                this.neurons[i].initialiseWeights(weights);
+        }
+        toJson() {
+            let neurons = [];
+            for (let i = 0; i < this.neurons.length; i++) {
+                neurons.push({
+                    "weights": this.neurons[i].weights
+                });
+            }
+            return {
+                "neurons": neurons
+            };
+        }
+        fromJson(json) {
+            let neurons = json["neurons"];
+            if (neurons.length != this.neurons.length)
+                throw new Error("Invalid number of neurons for layer.");
+            for (let i = 0; i < neurons.length; i++) {
+                let weights = neurons[i]["weights"];
+                this.neurons[i].initialiseWeights(weights);
+            }
+        }
+    }
+    NeuralNet.NeuronLayer = NeuronLayer;
+})(NeuralNet || (NeuralNet = {}));
+var NeuralNet;
+(function (NeuralNet) {
     class Network {
         constructor() {
             this._layers = [];
@@ -90,6 +186,76 @@ var NeuralNet;
     }
     NeuralNet.Network = Network;
 })(NeuralNet || (NeuralNet = {}));
+/// <reference path="Neuron.ts" />
+/// <reference path="NeuronLayer.ts" />
+/// <reference path="Network.ts" />
+// NOTE TO SELF:
+//    This only really works for linear activation currently
+var NeuralNet;
+(function (NeuralNet) {
+    var Backprop;
+    (function (Backprop) {
+        class BackpropNeuron extends NeuralNet.Neuron {
+            updateWeights(backDelta, learningRate) {
+                this.backDelta = backDelta;
+                for (let i = 0; i < this.weights.length; i++)
+                    this.weights[i] += learningRate * backDelta * this.inputs[i];
+            }
+            trainAsOutput(target, learningRate) {
+                let error = target - this.output;
+                this.updateWeights(error, learningRate);
+            }
+            trainAsHidden(index, forwardLayer, learningRate) {
+                let backDelta = 0;
+                for (let i = 0; i < forwardLayer.neurons.length; i++) {
+                    let neuron = forwardLayer.neurons[i];
+                    backDelta += neuron.backDelta * neuron.weights[index];
+                }
+                this.updateWeights(backDelta, learningRate);
+            }
+        }
+        class BackpropLayer extends NeuralNet.NeuronLayer {
+            constructNeuron(activation) {
+                return new BackpropNeuron(activation);
+            }
+            trainAsOutput(target, learningRate) {
+                for (let i = 0; i < this.neurons.length; i++) {
+                    let neuron = this.neurons[i];
+                    neuron.trainAsOutput(target[i], learningRate);
+                }
+            }
+            trainAsHidden(forwardLayer, learningRate) {
+                for (let i = 0; i < this.neurons.length; i++) {
+                    let neuron = this.neurons[i];
+                    neuron.trainAsHidden(i, forwardLayer, learningRate);
+                }
+            }
+        }
+        class Network extends NeuralNet.Network {
+            constructor() {
+                super(...arguments);
+                this.backpropLayers = [];
+            }
+            addNeuronLayer(size = 0, activation = null) {
+                let layer = new BackpropLayer(size, activation);
+                this.addLayer(layer);
+                layer.initialiseWeights();
+                this.backpropLayers.push(layer);
+                return layer;
+            }
+            train(target, learningRate) {
+                let layerIndex = this.backpropLayers.length - 1;
+                this.backpropLayers[layerIndex].trainAsOutput(target, learningRate);
+                while (layerIndex > 0) {
+                    let forwardLayer = this.backpropLayers[layerIndex];
+                    layerIndex--;
+                    this.backpropLayers[layerIndex].trainAsHidden(forwardLayer, learningRate);
+                }
+            }
+        }
+        Backprop.Network = Network;
+    })(Backprop = NeuralNet.Backprop || (NeuralNet.Backprop = {}));
+})(NeuralNet || (NeuralNet = {}));
 /// <reference path="Network.ts" />
 var NeuralNet;
 (function (NeuralNet) {
@@ -129,99 +295,6 @@ var NeuralNet;
         }
         Genetic.Network = Network;
     })(Genetic = NeuralNet.Genetic || (NeuralNet.Genetic = {}));
-})(NeuralNet || (NeuralNet = {}));
-var NeuralNet;
-(function (NeuralNet) {
-    class Neuron {
-        constructor(_activation = null) {
-            this._activation = _activation;
-            this._output = 0;
-            this.inputs = [];
-            this.weights = [];
-            this._activation = this._activation || NeuralNet.ActivationFunctions.ReLU;
-        }
-        get output() {
-            return this._output;
-        }
-        activate() {
-            this._output = this._activation(this.inputs, this.weights);
-            return this._output;
-        }
-        setInputs(inputs, weights = null) {
-            this.inputs = inputs;
-            if (weights)
-                this.initialiseWeights(weights);
-        }
-        initialiseWeights(weights = null) {
-            weights = weights || NeuralNet.Utils.RandomValueGenerator(-1, 1);
-            if (typeof weights !== "function") {
-                weights = NeuralNet.Utils.ArrayValueGenerator(weights);
-                this.initialiseWeights(weights);
-            }
-            else {
-                this.weights = new Array(this.inputs.length);
-                for (let i = 0; i < this.weights.length; i++)
-                    this.weights[i] = weights();
-            }
-        }
-    }
-    NeuralNet.Neuron = Neuron;
-})(NeuralNet || (NeuralNet = {}));
-var NeuralNet;
-(function (NeuralNet) {
-    class NeuronLayer {
-        constructor(size = 0, activation = null) {
-            this.type = "neuron";
-            this.inputs = [];
-            this.outputs = [];
-            this.neurons = [];
-            while (size-- > 0) {
-                let neuron = new NeuralNet.Neuron(activation);
-                this.addNeuron(neuron);
-            }
-            this.initialiseWeights();
-        }
-        activate() {
-            for (let i = 0; i < this.neurons.length; i++)
-                this.outputs[i] = this.neurons[i].activate();
-            return this.outputs;
-        }
-        addNeuron(neuron) {
-            this.neurons.push(neuron);
-            this.outputs.push(0);
-            neuron.setInputs(this.inputs);
-        }
-        setInputs(inputs) {
-            this.inputs = inputs;
-            for (let i = 0; i < this.neurons.length; i++)
-                this.neurons[i].setInputs(inputs);
-        }
-        initialiseWeights(weights = null) {
-            for (let i = 0; i < this.neurons.length; i++)
-                this.neurons[i].initialiseWeights(weights);
-        }
-        toJson() {
-            let neurons = [];
-            for (let i = 0; i < this.neurons.length; i++) {
-                neurons.push({
-                    "weights": this.neurons[i].weights
-                });
-            }
-            return {
-                "neurons": neurons
-            };
-        }
-        fromJson(json) {
-            let neurons = json["neurons"];
-            if (neurons.length != this.neurons.length)
-                throw new Error("Invalid number of neurons for layer.");
-            for (let i = 0; i < neurons.length; i++) {
-                let weights = neurons[i]["weights"];
-                this.neurons[i].initialiseWeights(weights);
-            }
-        }
-    }
-    NeuralNet.NeuronLayer = NeuronLayer;
 })(NeuralNet || (NeuralNet = {}));
 var NeuralNet;
 (function (NeuralNet) {

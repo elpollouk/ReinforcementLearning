@@ -5,37 +5,6 @@ declare namespace NeuralNet.ActivationFunctions {
     function Sigmoid(scale?: number): ActivationFunction;
 }
 declare namespace NeuralNet {
-    class Network {
-        private _layers;
-        inputs: number[];
-        readonly outputs: number[];
-        activate(): number[];
-        setInputSize(size: number): void;
-        addLayer(layer: ILayer): void;
-        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
-        addNormalisingLayer(): NormalisingLayer;
-        toJson(): any;
-        fromJson(json: any): void;
-    }
-}
-declare namespace NeuralNet.Genetic {
-    class Network extends NeuralNet.Network {
-        private _mutators;
-        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
-        mutate(probability: number, scale: number): void;
-    }
-}
-declare namespace NeuralNet {
-    interface ILayer {
-        readonly type: string;
-        outputs: number[];
-        setInputs(inputs: number[]): any;
-        activate(): number[];
-        toJson(): any;
-        fromJson(json: any): any;
-    }
-}
-declare namespace NeuralNet {
     class Neuron {
         private _activation;
         private _output;
@@ -55,12 +24,51 @@ declare namespace NeuralNet {
         outputs: number[];
         neurons: Neuron[];
         constructor(size?: number, activation?: ActivationFunctions.ActivationFunction);
+        protected constructNeuron(activation: ActivationFunctions.ActivationFunction): Neuron;
         activate(): number[];
         addNeuron(neuron: Neuron): void;
         setInputs(inputs: number[]): void;
         initialiseWeights(weights?: Utils.ValueGenerator): void;
         toJson(): any;
         fromJson(json: any): void;
+    }
+}
+declare namespace NeuralNet {
+    class Network {
+        private _layers;
+        inputs: number[];
+        readonly outputs: number[];
+        activate(): number[];
+        setInputSize(size: number): void;
+        addLayer(layer: ILayer): void;
+        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
+        addNormalisingLayer(): NormalisingLayer;
+        toJson(): any;
+        fromJson(json: any): void;
+    }
+}
+declare namespace NeuralNet.Backprop {
+    class Network extends NeuralNet.Network {
+        private backpropLayers;
+        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
+        train(target: number[], learningRate: number): void;
+    }
+}
+declare namespace NeuralNet.Genetic {
+    class Network extends NeuralNet.Network {
+        private _mutators;
+        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
+        mutate(probability: number, scale: number): void;
+    }
+}
+declare namespace NeuralNet {
+    interface ILayer {
+        readonly type: string;
+        outputs: number[];
+        setInputs(inputs: number[]): any;
+        activate(): number[];
+        toJson(): any;
+        fromJson(json: any): any;
     }
 }
 declare namespace NeuralNet {

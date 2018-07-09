@@ -5,6 +5,7 @@ namespace Fours {
     const VIZWIDTH = 5;
     const VIZHEIGHT = 4;
     const DISCOUNT = 0.9;
+    const LEARNING_RATE = 0.1;
 
     let gameContainers: GameContainer[] = [];
     let paused = false;
@@ -121,7 +122,7 @@ namespace Fours {
         }
         else if (game.winner === PLAYER_BLUE) {
             rewardRed = -1;
-            rewardBlue = 0;
+            rewardBlue = 1;
         }
 
         trainWithMemory(gameContainer.memoryRed, rewardRed, discount);
@@ -135,9 +136,10 @@ namespace Fours {
                 network.inputs[i] = sample.inputs[i];
 
             let value = network.activate()[0];
+            network.train([reward], LEARNING_RATE);
             let error = value - reward;
 
-            averageError.add([error]);
+            averageError.add([error * error * 0.5]);
 
             reward *= discount;
         }
