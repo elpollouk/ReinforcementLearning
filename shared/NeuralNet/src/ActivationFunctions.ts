@@ -31,11 +31,11 @@ namespace NeuralNet.ActivationFunctions {
         }
     }
 
-    export function ReLU() {
+    export function ReLU(): ActivationFunction {
         return new _ReLU();
     }
 
-    export function Linear() {
+    export function Linear(): ActivationFunction {
         return new _Linear();
     }
 

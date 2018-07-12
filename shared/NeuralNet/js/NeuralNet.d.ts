@@ -3,16 +3,8 @@ declare namespace NeuralNet.ActivationFunctions {
         transfer(activation: number): number;
         derivative(activation: number): number;
     }
-    class _ReLU implements ActivationFunction {
-        transfer(activation: number): number;
-        derivative(activation: number): number;
-    }
-    class _Linear implements ActivationFunction {
-        transfer(activation: number): number;
-        derivative(activation: number): number;
-    }
-    function ReLU(): _ReLU;
-    function Linear(): _Linear;
+    function ReLU(): ActivationFunction;
+    function Linear(): ActivationFunction;
 }
 declare namespace NeuralNet {
     class Neuron {
@@ -63,7 +55,7 @@ declare namespace NeuralNet.Backprop {
     class Network extends NeuralNet.Network {
         private _backpropLayers;
         addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
-        train(target: number[], learningRate: number): void;
+        train(target: number[], learningRate: number, momentum: number): void;
     }
 }
 declare namespace NeuralNet.Genetic {

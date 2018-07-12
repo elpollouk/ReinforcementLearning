@@ -70,13 +70,13 @@ var Fours;
 (function (Fours) {
     function writeRedOrBlueFeature(output, value) {
         if (value === Fours.PLAYER_RED) {
-            output.write(1, 0);
+            output.write(1, -1);
         }
         else if (value === Fours.PLAYER_BLUE) {
-            output.write(0, 1);
+            output.write(-1, 1);
         }
         else {
-            output.write(0, 0);
+            output.write(-1, -1);
         }
     }
     class Agent {
@@ -155,6 +155,7 @@ var Fours;
     const VIZHEIGHT = 4;
     const DISCOUNT = 0.9;
     const LEARNING_RATE = 0.09;
+    const LEARNING_MOMENTUM = 0.1;
     let gameContainers = [];
     let paused = false;
     let numGames = 0;
@@ -259,7 +260,7 @@ var Fours;
             for (let i = 0; i < sample.inputs.length; i++)
                 network.inputs[i] = sample.inputs[i];
             let value = network.activate()[0];
-            network.train([reward], LEARNING_RATE);
+            network.train([reward], LEARNING_RATE, LEARNING_MOMENTUM);
             let error = value - reward;
             averageError.add([error * error * 0.5]);
             reward *= discount;

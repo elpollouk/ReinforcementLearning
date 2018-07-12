@@ -77,13 +77,11 @@ var NeuralNet;
             weights = weights || NeuralNet.Utils.RandomValueGenerator(-1, 1);
             if (typeof weights !== "function") {
                 weights = NeuralNet.Utils.ArrayValueGenerator(weights);
-                this.initialiseWeights(weights);
+                //this.initialiseWeights(weights);
             }
-            else {
-                this.weights = new Array(this.inputs.length);
-                for (let i = 0; i < this.weights.length; i++)
-                    this.weights[i] = weights();
-            }
+            this.weights = new Array(this.inputs.length);
+            for (let i = 0; i < this.weights.length; i++)
+                this.weights[i] = weights();
         }
     }
     NeuralNet.Neuron = Neuron;
@@ -224,10 +222,21 @@ var NeuralNet;
             return to / from;
         }
         class BackpropNeuron extends NeuralNet.Neuron {
-            updateWeights(learningRate) {
+            constructor() {
+                super(...arguments);
+                this._previousWeightDeltas = [];
+            }
+            initialiseWeights(weights = null) {
+                super.initialiseWeights(weights);
+                this._previousWeightDeltas = new Array(this.weights.length);
+                for (let i = 0; i < this._previousWeightDeltas.length; i++)
+                    this._previousWeightDeltas[i] = 0;
+            }
+            updateWeights(learningRate, momentum) {
                 for (let i = 0; i < this.weights.length; i++) {
                     let delta = learningRate * this.backDelta * this.inputs[i];
-                    this.weights[i] += delta;
+                    this.weights[i] += delta + (momentum * this._previousWeightDeltas[i]);
+                    this._previousWeightDeltas[i] = delta;
                 }
             }
             trainAsOutput(target) {
@@ -263,9 +272,9 @@ var NeuralNet;
                     neuron.trainAsHidden(i, forwardLayer);
                 }
             }
-            updateWeights(learningRate) {
+            updateWeights(learningRate, momentum) {
                 for (let i = 0; i < this.neurons.length; i++)
-                    this.neurons[i].updateWeights(learningRate);
+                    this.neurons[i].updateWeights(learningRate, momentum);
             }
         }
         class Network extends NeuralNet.Network {
@@ -280,7 +289,7 @@ var NeuralNet;
                 this._backpropLayers.push(layer);
                 return layer;
             }
-            train(target, learningRate) {
+            train(target, learningRate, momentum) {
                 let layerIndex = this._backpropLayers.length - 1;
                 this._backpropLayers[layerIndex].trainAsOutput(target);
                 while (layerIndex > 0) {
@@ -289,7 +298,7 @@ var NeuralNet;
                     this._backpropLayers[layerIndex].trainAsHidden(forwardLayer);
                 }
                 for (let i = 0; i < this._backpropLayers.length; i++)
-                    this._backpropLayers[i].updateWeights(learningRate);
+                    this._backpropLayers[i].updateWeights(learningRate, momentum);
             }
         }
         Backprop.Network = Network;

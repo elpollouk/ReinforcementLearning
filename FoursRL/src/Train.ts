@@ -6,6 +6,7 @@ namespace Fours {
     const VIZHEIGHT = 4;
     const DISCOUNT = 0.9;
     const LEARNING_RATE = 0.09;
+    const LEARNING_MOMENTUM = 0.1;
 
     let gameContainers: GameContainer[] = [];
     let paused = false;
@@ -136,7 +137,7 @@ namespace Fours {
                 network.inputs[i] = sample.inputs[i];
 
             let value = network.activate()[0];
-            network.train([reward], LEARNING_RATE);
+            network.train([reward], LEARNING_RATE, LEARNING_MOMENTUM);
             let error = value - reward;
 
             averageError.add([error * error * 0.5]);

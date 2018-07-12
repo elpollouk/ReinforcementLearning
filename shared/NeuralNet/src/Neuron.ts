@@ -38,13 +38,12 @@ namespace NeuralNet {
             
             if (typeof weights !== "function") {
                 weights = Utils.ArrayValueGenerator(weights);
-                this.initialiseWeights(weights);
+                //this.initialiseWeights(weights);
             }
-            else {
-                this.weights = new Array<number>(this.inputs.length);
-                for (let i = 0; i < this.weights.length; i++)
-                    this.weights[i] = weights();
-            }
+            
+            this.weights = new Array<number>(this.inputs.length);
+            for (let i = 0; i < this.weights.length; i++)
+                this.weights[i] = (weights as Function)();            
         }
     }
 }

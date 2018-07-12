@@ -3,13 +3,13 @@
 namespace Fours {
     function writeRedOrBlueFeature(output: NeuralNet.Utils.ArrayWriter<number>, value: string) {
         if (value === PLAYER_RED) {
-            output.write(1, 0);
+            output.write(1, -1);
         }
         else if (value === PLAYER_BLUE) {
-            output.write(0, 1);
+            output.write(-1, 1);
         }
         else {
-            output.write(0, 0);
+            output.write(-1, -1);
         }
     }
 

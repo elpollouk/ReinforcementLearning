@@ -11,11 +11,21 @@ namespace NeuralNet.Backprop {
 
     class BackpropNeuron extends Neuron {
         public backDelta: number;
+        private _previousWeightDeltas: number[] = [];
 
-        public updateWeights(learningRate: number) {
+        public initialiseWeights(weights: Utils.ValueGenerator = null) {
+            super.initialiseWeights(weights);
+
+            this._previousWeightDeltas = new Array<number>(this.weights.length);
+            for (let i = 0; i < this._previousWeightDeltas.length; i++)
+                this._previousWeightDeltas[i] = 0;
+        }
+
+        public updateWeights(learningRate: number, momentum: number) {
             for (let i = 0; i < this.weights.length; i++) {
                 let delta = learningRate * this.backDelta * this.inputs[i];
-                this.weights[i] += delta;
+                this.weights[i] += delta + (momentum * this._previousWeightDeltas[i]);
+                this._previousWeightDeltas[i] = delta;
             }
         }
 
@@ -60,9 +70,9 @@ namespace NeuralNet.Backprop {
             }
         }
 
-        public updateWeights(learningRate: number) {
+        public updateWeights(learningRate: number, momentum: number) {
             for (let i = 0; i < this.neurons.length; i++)
-                (this.neurons[i] as BackpropNeuron).updateWeights(learningRate);
+                (this.neurons[i] as BackpropNeuron).updateWeights(learningRate, momentum);
         }
     }
 
@@ -79,7 +89,7 @@ namespace NeuralNet.Backprop {
             return layer;
         }
 
-        public train(target: number[], learningRate: number) {
+        public train(target: number[], learningRate: number, momentum: number) {
             let layerIndex = this._backpropLayers.length - 1;
 
             this._backpropLayers[layerIndex].trainAsOutput(target);
@@ -90,7 +100,7 @@ namespace NeuralNet.Backprop {
             }
 
             for (let i = 0; i <  this._backpropLayers.length; i++)
-                this._backpropLayers[i].updateWeights(learningRate);
+                this._backpropLayers[i].updateWeights(learningRate, momentum);
         }
     }
 }
