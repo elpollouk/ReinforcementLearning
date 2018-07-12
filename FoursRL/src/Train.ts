@@ -5,14 +5,14 @@ namespace Fours {
     const VIZWIDTH = 5;
     const VIZHEIGHT = 4;
     const DISCOUNT = 0.9;
-    const LEARNING_RATE = 0.1;
+    const LEARNING_RATE = 0.09;
 
     let gameContainers: GameContainer[] = [];
     let paused = false;
 
     let numGames = 0;
     let results = "";
-    let averageError = new SlidingWindowSum(250, [0]);
+    let averageError = new SlidingWindowSum(500, [0]);
     let statsOutput: HTMLElement;
 
     let network = Agent.buildNetwork();

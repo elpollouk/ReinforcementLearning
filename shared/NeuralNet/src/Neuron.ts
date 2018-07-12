@@ -1,19 +1,29 @@
 namespace NeuralNet {
     export class Neuron {
         private _output: number = 0;
+        private _activationValue: number = 0;
         public inputs: number[] = [];
         public weights: number[] = [];
 
-        public constructor(private _activation : ActivationFunctions.ActivationFunction = null) {
-            this._activation = this._activation || ActivationFunctions.ReLU;
+        public constructor(protected _activationFunc : ActivationFunctions.ActivationFunction = null) {
+            this._activationFunc = this._activationFunc || ActivationFunctions.ReLU();
         }
 
-        public get output() : number {
+        public get output(): number {
             return this._output;
         }
 
+        public get activation(): number {
+            return this._activationValue;
+        }
+
         public activate(): number {
-            this._output = this._activation(this.inputs, this.weights);
+            this._activationValue = 0;
+            for (let i = 0; i < this.inputs.length; i++)
+            {
+                this._activationValue += (this.inputs[i] * this.weights[i]);
+            }
+            this._output = this._activationFunc.transfer(this._activationValue);
             return this._output;
         }
 

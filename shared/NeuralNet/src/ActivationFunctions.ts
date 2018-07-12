@@ -1,25 +1,45 @@
 namespace NeuralNet.ActivationFunctions {
     
-    export type ActivationFunction = (inputs: number[], weights: number[]) => number;
-
-    export function ReLU(inputs: number[], weights: number[]): number {
-        let sum = Linear(inputs, weights);
-
-        if (sum < 0)
-            sum = 0;
-
-        return sum;
+    export interface ActivationFunction {
+        transfer(activation: number): number;
+        derivative(activation: number): number;
     }
 
-    export function Linear(inputs: number[], weights: number[]): number {
-        let sum: number = 0;
-        for (let i = 0; i < inputs.length; i++)
-            sum += (inputs[i] * weights[i]);
+    class _ReLU implements ActivationFunction {
+        public transfer(activation: number): number {
+            if (activation < 0)
+                return 0;
 
-        return sum;
+            return activation;
+        }
+
+        public derivative(activation: number): number {
+            if (activation < 0)
+                return 0;
+
+            return 1;
+        }
     }
 
-    export function Sigmoid(scale: number = 1): ActivationFunction {
+    class _Linear implements ActivationFunction {
+        public transfer(activation: number): number {
+            return activation;
+        }
+
+        public derivative(activation: number): number {
+            return 1;
+        }
+    }
+
+    export function ReLU() {
+        return new _ReLU();
+    }
+
+    export function Linear() {
+        return new _Linear();
+    }
+
+    /*export function Sigmoid(scale: number = 1): ActivationFunction {
         return (inputs: number[], weights: number[]) => {
             let value: number = 0;
             for (let i = 0; i < inputs.length; i++)
@@ -29,5 +49,5 @@ namespace NeuralNet.ActivationFunctions {
 
             return value;
         }
-    }
+    }*/
 }

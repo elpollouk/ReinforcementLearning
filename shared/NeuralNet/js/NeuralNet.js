@@ -2,47 +2,70 @@ var NeuralNet;
 (function (NeuralNet) {
     var ActivationFunctions;
     (function (ActivationFunctions) {
-        function ReLU(inputs, weights) {
-            let sum = Linear(inputs, weights);
-            if (sum < 0)
-                sum = 0;
-            return sum;
+        class _ReLU {
+            transfer(activation) {
+                if (activation < 0)
+                    return 0;
+                return activation;
+            }
+            derivative(activation) {
+                if (activation < 0)
+                    return 0;
+                return 1;
+            }
+        }
+        class _Linear {
+            transfer(activation) {
+                return activation;
+            }
+            derivative(activation) {
+                return 1;
+            }
+        }
+        function ReLU() {
+            return new _ReLU();
         }
         ActivationFunctions.ReLU = ReLU;
-        function Linear(inputs, weights) {
-            let sum = 0;
-            for (let i = 0; i < inputs.length; i++)
-                sum += (inputs[i] * weights[i]);
-            return sum;
+        function Linear() {
+            return new _Linear();
         }
         ActivationFunctions.Linear = Linear;
-        function Sigmoid(scale = 1) {
-            return (inputs, weights) => {
-                let value = 0;
+        /*export function Sigmoid(scale: number = 1): ActivationFunction {
+            return (inputs: number[], weights: number[]) => {
+                let value: number = 0;
                 for (let i = 0; i < inputs.length; i++)
                     value += (inputs[i] * weights[i]);
+    
                 value = 1 / (1 + Math.exp(-value * scale));
+    
                 return value;
-            };
-        }
-        ActivationFunctions.Sigmoid = Sigmoid;
+            }
+        }*/
     })(ActivationFunctions = NeuralNet.ActivationFunctions || (NeuralNet.ActivationFunctions = {}));
 })(NeuralNet || (NeuralNet = {}));
 var NeuralNet;
 (function (NeuralNet) {
     class Neuron {
-        constructor(_activation = null) {
-            this._activation = _activation;
+        constructor(_activationFunc = null) {
+            this._activationFunc = _activationFunc;
             this._output = 0;
+            this._activationValue = 0;
             this.inputs = [];
             this.weights = [];
-            this._activation = this._activation || NeuralNet.ActivationFunctions.ReLU;
+            this._activationFunc = this._activationFunc || NeuralNet.ActivationFunctions.ReLU();
         }
         get output() {
             return this._output;
         }
+        get activation() {
+            return this._activationValue;
+        }
         activate() {
-            this._output = this._activation(this.inputs, this.weights);
+            this._activationValue = 0;
+            for (let i = 0; i < this.inputs.length; i++) {
+                this._activationValue += (this.inputs[i] * this.weights[i]);
+            }
+            this._output = this._activationFunc.transfer(this._activationValue);
             return this._output;
         }
         setInputs(inputs, weights = null) {
@@ -189,68 +212,84 @@ var NeuralNet;
 /// <reference path="Neuron.ts" />
 /// <reference path="NeuronLayer.ts" />
 /// <reference path="Network.ts" />
-// NOTE TO SELF:
-//    This only really works for linear activation currently
 var NeuralNet;
 (function (NeuralNet) {
     var Backprop;
     (function (Backprop) {
+        function getScaleFactor(from, to) {
+            if (from === to)
+                return 1;
+            if (to == 0)
+                return 0;
+            return to / from;
+        }
         class BackpropNeuron extends NeuralNet.Neuron {
-            updateWeights(backDelta, learningRate) {
-                this.backDelta = backDelta;
-                for (let i = 0; i < this.weights.length; i++)
-                    this.weights[i] += learningRate * backDelta * this.inputs[i];
+            updateWeights(learningRate) {
+                for (let i = 0; i < this.weights.length; i++) {
+                    let delta = learningRate * this.backDelta * this.inputs[i];
+                    this.weights[i] += delta;
+                }
             }
-            trainAsOutput(target, learningRate) {
-                let error = target - this.output;
-                this.updateWeights(error, learningRate);
+            trainAsOutput(target) {
+                let error = this._activationFunc.derivative(this.activation) * (target - this.output);
+                this.backDelta = error;
             }
-            trainAsHidden(index, forwardLayer, learningRate) {
+            trainAsHidden(index, forwardLayer) {
                 let backDelta = 0;
                 for (let i = 0; i < forwardLayer.neurons.length; i++) {
                     let neuron = forwardLayer.neurons[i];
-                    backDelta += neuron.backDelta * neuron.weights[index];
+                    let contribution = neuron.backDelta * neuron.weights[index];
+                    let normalisationScale = getScaleFactor(this.output, neuron.inputs[index]);
+                    contribution *= normalisationScale;
+                    backDelta += contribution;
                 }
-                this.updateWeights(backDelta, learningRate);
+                backDelta *= this._activationFunc.derivative(this.activation);
+                this.backDelta = backDelta;
             }
         }
         class BackpropLayer extends NeuralNet.NeuronLayer {
             constructNeuron(activation) {
                 return new BackpropNeuron(activation);
             }
-            trainAsOutput(target, learningRate) {
+            trainAsOutput(target) {
                 for (let i = 0; i < this.neurons.length; i++) {
                     let neuron = this.neurons[i];
-                    neuron.trainAsOutput(target[i], learningRate);
+                    neuron.trainAsOutput(target[i]);
                 }
             }
-            trainAsHidden(forwardLayer, learningRate) {
+            trainAsHidden(forwardLayer) {
                 for (let i = 0; i < this.neurons.length; i++) {
                     let neuron = this.neurons[i];
-                    neuron.trainAsHidden(i, forwardLayer, learningRate);
+                    neuron.trainAsHidden(i, forwardLayer);
                 }
+            }
+            updateWeights(learningRate) {
+                for (let i = 0; i < this.neurons.length; i++)
+                    this.neurons[i].updateWeights(learningRate);
             }
         }
         class Network extends NeuralNet.Network {
             constructor() {
                 super(...arguments);
-                this.backpropLayers = [];
+                this._backpropLayers = [];
             }
             addNeuronLayer(size = 0, activation = null) {
                 let layer = new BackpropLayer(size, activation);
                 this.addLayer(layer);
                 layer.initialiseWeights();
-                this.backpropLayers.push(layer);
+                this._backpropLayers.push(layer);
                 return layer;
             }
             train(target, learningRate) {
-                let layerIndex = this.backpropLayers.length - 1;
-                this.backpropLayers[layerIndex].trainAsOutput(target, learningRate);
+                let layerIndex = this._backpropLayers.length - 1;
+                this._backpropLayers[layerIndex].trainAsOutput(target);
                 while (layerIndex > 0) {
-                    let forwardLayer = this.backpropLayers[layerIndex];
+                    let forwardLayer = this._backpropLayers[layerIndex];
                     layerIndex--;
-                    this.backpropLayers[layerIndex].trainAsHidden(forwardLayer, learningRate);
+                    this._backpropLayers[layerIndex].trainAsHidden(forwardLayer);
                 }
+                for (let i = 0; i < this._backpropLayers.length; i++)
+                    this._backpropLayers[i].updateWeights(learningRate);
             }
         }
         Backprop.Network = Network;

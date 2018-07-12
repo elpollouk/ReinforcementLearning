@@ -25,11 +25,11 @@ namespace Fours {
             let net = new NeuralNet.Backprop.Network();
 
             net.setInputSize(86);
-            net.addNeuronLayer(86);
+            net.addNeuronLayer(86, NeuralNet.ActivationFunctions.Linear());
             net.addNormalisingLayer();
-            net.addNeuronLayer(43);
+            net.addNeuronLayer(43, NeuralNet.ActivationFunctions.Linear());
             net.addNormalisingLayer();
-            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Linear);
+            net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Linear());
 
             return net;
         }

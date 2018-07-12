@@ -1,17 +1,29 @@
 declare namespace NeuralNet.ActivationFunctions {
-    type ActivationFunction = (inputs: number[], weights: number[]) => number;
-    function ReLU(inputs: number[], weights: number[]): number;
-    function Linear(inputs: number[], weights: number[]): number;
-    function Sigmoid(scale?: number): ActivationFunction;
+    interface ActivationFunction {
+        transfer(activation: number): number;
+        derivative(activation: number): number;
+    }
+    class _ReLU implements ActivationFunction {
+        transfer(activation: number): number;
+        derivative(activation: number): number;
+    }
+    class _Linear implements ActivationFunction {
+        transfer(activation: number): number;
+        derivative(activation: number): number;
+    }
+    function ReLU(): _ReLU;
+    function Linear(): _Linear;
 }
 declare namespace NeuralNet {
     class Neuron {
-        private _activation;
+        protected _activationFunc: ActivationFunctions.ActivationFunction;
         private _output;
+        private _activationValue;
         inputs: number[];
         weights: number[];
-        constructor(_activation?: ActivationFunctions.ActivationFunction);
+        constructor(_activationFunc?: ActivationFunctions.ActivationFunction);
         readonly output: number;
+        readonly activation: number;
         activate(): number;
         setInputs(inputs: number[], weights?: Utils.ValueGenerator): void;
         initialiseWeights(weights?: Utils.ValueGenerator): void;
@@ -49,7 +61,7 @@ declare namespace NeuralNet {
 }
 declare namespace NeuralNet.Backprop {
     class Network extends NeuralNet.Network {
-        private backpropLayers;
+        private _backpropLayers;
         addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
         train(target: number[], learningRate: number): void;
     }
