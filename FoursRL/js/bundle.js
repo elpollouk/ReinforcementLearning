@@ -147,21 +147,78 @@ var Fours;
     }
     Fours.Agent = Agent;
 })(Fours || (Fours = {}));
+var Fours;
+(function (Fours) {
+    class TrajectorySample {
+        constructor(inputs, expected = null) {
+            this.inputs = inputs;
+            this.expected = expected;
+            this.inputs = this.inputs.slice(0);
+        }
+    }
+    Fours.TrajectorySample = TrajectorySample;
+    class TrajectoryMemory {
+        constructor(limit = 0) {
+            this.limit = limit;
+            this.memory = [];
+        }
+        reset() {
+            this.memory = [];
+        }
+        get hasSamples() {
+            return this.memory.length != 0;
+        }
+        record(inputs, expected = null) {
+            let sample = new TrajectorySample(inputs, expected);
+            this.recordSample(sample);
+        }
+        recordSample(sample) {
+            this.memory.push(sample);
+            if (this.limit && this.memory.length > this.limit)
+                this.memory.shift();
+        }
+        pop() {
+            return this.memory.pop();
+        }
+        sample(count) {
+            if (this.memory.length < count)
+                count = this.memory.length;
+            let samples = new Array(count);
+            let sampleProb = count / this.memory.length;
+            for (let i = 0; i < this.memory.length; i++) {
+                if (i < count) {
+                    samples[i] = this.memory[i];
+                }
+                else if (Math.random() < sampleProb) {
+                    let replaceIndex = Math.floor(Math.random() * count);
+                    samples[replaceIndex] = this.memory[i];
+                }
+            }
+            return samples;
+        }
+    }
+    Fours.TrajectoryMemory = TrajectoryMemory;
+})(Fours || (Fours = {}));
 /// <reference path="agent.ts" />
 /// <reference path="SlidingWindowSum.ts" />
+/// <reference path="TrajectoryMemory.ts" />
 var Fours;
 (function (Fours) {
     const VIZWIDTH = 5;
     const VIZHEIGHT = 4;
     const DISCOUNT = 0.9;
-    const LEARNING_RATE = 0.09;
+    const LEARNING_RATE = 0.1;
     const LEARNING_MOMENTUM = 0.1;
+    //    const LONGTERM_MEMORY_SIZE = 1000;
+    //    const LONGTERM_STORE_PROPABILITY = 0.05;
+    //    const LONGTERM_SAMPLE_SIZE = 50;
     let gameContainers = [];
     let paused = false;
     let numGames = 0;
     let results = "";
     let averageError = new Fours.SlidingWindowSum(500, [0]);
     let statsOutput;
+    //    let longtermMemory = new TrajectoryMemory(LONGTERM_MEMORY_SIZE);
     let network = Fours.Agent.buildNetwork();
     let agentEvaluator = new Fours.Agent(0, network);
     let agentExplorer = new Fours.Agent(0.1, network);
@@ -232,6 +289,7 @@ var Fours;
                 updateEvaluatorStats();
                 updateStats();
                 trainWithContainer(gameContainers[i], DISCOUNT);
+                //                trainWithLongtermMemory();
                 gameContainers[i].reset();
             }
             gameContainers[i].act();
@@ -245,10 +303,10 @@ var Fours;
         let rewardBlue = 0;
         if (game.winner === Fours.PLAYER_RED) {
             rewardRed = 1;
-            rewardBlue = -1;
+            rewardBlue = 0;
         }
         else if (game.winner === Fours.PLAYER_BLUE) {
-            rewardRed = -1;
+            rewardRed = 0;
             rewardBlue = 1;
         }
         trainWithMemory(gameContainer.memoryRed, rewardRed, discount);
@@ -263,9 +321,25 @@ var Fours;
             network.train([reward], LEARNING_RATE, LEARNING_MOMENTUM);
             let error = value - reward;
             averageError.add([error * error * 0.5]);
+            //            if (Math.random() < LONGTERM_STORE_PROPABILITY) {
+            //                sample.expected = [reward];
+            //                longtermMemory.recordSample(sample);
+            //            }
             reward *= discount;
         }
     }
+    /*    function trainWithLongtermMemory() {
+            let samples = longtermMemory.sample(LONGTERM_SAMPLE_SIZE);
+            for (let i = 0; i < samples.length; i++) {
+                let sample = samples[i];
+    
+                for (let i = 0; i < sample.inputs.length; i++)
+                    network.inputs[i] = sample.inputs[i];
+    
+                network.activate();
+                network.train(sample.expected, LEARNING_RATE, LEARNING_MOMENTUM);
+            }
+        }*/
     function updateEvaluatorStats() {
         let data = agentEvaluator.metadata.results.sum;
         results = `W=${data[0]}, `
@@ -293,38 +367,6 @@ var Fours;
             + `Results = ${results}<br />`
             + `Average error = ${averageError.average[0].toFixed(3)}`;
     }
-})(Fours || (Fours = {}));
-var Fours;
-(function (Fours) {
-    class TrajectorySample {
-        constructor(inputs) {
-            this.inputs = inputs;
-            this.inputs = this.inputs.slice(0);
-        }
-    }
-    Fours.TrajectorySample = TrajectorySample;
-    class TrajectoryMemory {
-        constructor() {
-            this.memory = [];
-        }
-        reset() {
-            this.memory = [];
-        }
-        get hasSamples() {
-            return this.memory.length != 0;
-        }
-        record(inputs) {
-            let sample = new TrajectorySample(inputs);
-            this.recordSample(sample);
-        }
-        recordSample(sample) {
-            this.memory.push(sample);
-        }
-        pop() {
-            return this.memory.pop();
-        }
-    }
-    Fours.TrajectoryMemory = TrajectoryMemory;
 })(Fours || (Fours = {}));
 var Fours;
 (function (Fours) {

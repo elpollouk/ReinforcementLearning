@@ -1,12 +1,16 @@
 /// <reference path="agent.ts" />
 /// <reference path="SlidingWindowSum.ts" />
+/// <reference path="TrajectoryMemory.ts" />
 
 namespace Fours {
     const VIZWIDTH = 5;
     const VIZHEIGHT = 4;
     const DISCOUNT = 0.9;
-    const LEARNING_RATE = 0.09;
+    const LEARNING_RATE = 0.1;
     const LEARNING_MOMENTUM = 0.1;
+//    const LONGTERM_MEMORY_SIZE = 1000;
+//    const LONGTERM_STORE_PROPABILITY = 0.05;
+//    const LONGTERM_SAMPLE_SIZE = 50;
 
     let gameContainers: GameContainer[] = [];
     let paused = false;
@@ -16,6 +20,7 @@ namespace Fours {
     let averageError = new SlidingWindowSum(500, [0]);
     let statsOutput: HTMLElement;
 
+//    let longtermMemory = new TrajectoryMemory(LONGTERM_MEMORY_SIZE);
     let network = Agent.buildNetwork();
     let agentEvaluator = new Agent(0, network);
     let agentExplorer = new Agent(0.1, network);
@@ -102,6 +107,7 @@ namespace Fours {
                 updateStats();
 
                 trainWithContainer(gameContainers[i], DISCOUNT);
+//                trainWithLongtermMemory();
                 gameContainers[i].reset();
             }
 
@@ -119,10 +125,10 @@ namespace Fours {
 
         if (game.winner === PLAYER_RED) {
             rewardRed = 1;
-            rewardBlue = -1;
+            rewardBlue = 0;
         }
         else if (game.winner === PLAYER_BLUE) {
-            rewardRed = -1;
+            rewardRed = 0;
             rewardBlue = 1;
         }
 
@@ -142,9 +148,27 @@ namespace Fours {
 
             averageError.add([error * error * 0.5]);
 
+//            if (Math.random() < LONGTERM_STORE_PROPABILITY) {
+//                sample.expected = [reward];
+//                longtermMemory.recordSample(sample);
+//            }
+
             reward *= discount;
         }
     }
+
+/*    function trainWithLongtermMemory() {
+        let samples = longtermMemory.sample(LONGTERM_SAMPLE_SIZE);
+        for (let i = 0; i < samples.length; i++) {
+            let sample = samples[i];
+
+            for (let i = 0; i < sample.inputs.length; i++)
+                network.inputs[i] = sample.inputs[i];
+
+            network.activate();
+            network.train(sample.expected, LEARNING_RATE, LEARNING_MOMENTUM);
+        }
+    }*/
 
     function updateEvaluatorStats() {
         let data = agentEvaluator.metadata.results.sum as number[];
