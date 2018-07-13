@@ -3,13 +3,13 @@
 namespace Fours {
     function writeRedOrBlueFeature(output: NeuralNet.Utils.ArrayWriter<number>, value: string) {
         if (value === PLAYER_RED) {
-            output.write(1, -1);
+            output.write(1, 0);
         }
         else if (value === PLAYER_BLUE) {
-            output.write(-1, 1);
+            output.write(0, 1);
         }
         else {
-            output.write(-1, -1);
+            output.write(0, 0);
         }
     }
 
@@ -25,9 +25,9 @@ namespace Fours {
             let net = new NeuralNet.Backprop.Network();
 
             net.setInputSize(86);
-            net.addNeuronLayer(86, NeuralNet.ActivationFunctions.Linear());
+            net.addNeuronLayer(86);
             net.addNormalisingLayer();
-            net.addNeuronLayer(43, NeuralNet.ActivationFunctions.Linear());
+            net.addNeuronLayer(43);
             net.addNormalisingLayer();
             net.addNeuronLayer(1, NeuralNet.ActivationFunctions.Linear(), false);
 

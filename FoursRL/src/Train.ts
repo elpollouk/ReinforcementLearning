@@ -90,7 +90,7 @@ namespace Fours {
     }
 
     function resetMetadata(agent: Agent) {
-        agent.metadata.results = new SlidingWindowSum(100, [0, 0, 0]);
+        agent.metadata.results = new SlidingWindowSum(200, [0, 0, 0]);
     }
 
     function step() {
