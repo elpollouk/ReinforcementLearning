@@ -1,7 +1,7 @@
 namespace NeuralNet {
     export class Neuron {
-        private _output: number = 0;
-        private _activationValue: number = 0;
+        protected _output: number = 0;
+        protected _activationValue: number = 0;
         public inputs: number[] = [];
         public weights: number[] = [];
 
@@ -38,7 +38,6 @@ namespace NeuralNet {
             
             if (typeof weights !== "function") {
                 weights = Utils.ArrayValueGenerator(weights);
-                //this.initialiseWeights(weights);
             }
             
             this.weights = new Array<number>(this.inputs.length);

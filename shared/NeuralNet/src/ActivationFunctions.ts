@@ -31,12 +31,30 @@ namespace NeuralNet.ActivationFunctions {
         }
     }
 
+    class _Constant implements ActivationFunction {
+        public constructor(private _constant: number) {
+
+        }
+
+        public transfer(activation: number): number {
+            return this._constant;
+        }
+
+        public derivative(activation: number): number {
+            return 0;
+        }
+    }
+
     export function ReLU(): ActivationFunction {
         return new _ReLU();
     }
 
     export function Linear(): ActivationFunction {
         return new _Linear();
+    }
+
+    export function Constant(constant: number = 1) {
+        return new _Constant(constant);
     }
 
     /*export function Sigmoid(scale: number = 1): ActivationFunction {

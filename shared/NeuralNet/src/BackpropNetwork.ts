@@ -9,6 +9,12 @@ namespace NeuralNet.Backprop {
         return to / from;
     }
 
+    function asBackpropNeuron(neuron: Neuron): BackpropNeuron {
+        if (neuron.constructor === BackpropNeuron)
+            return neuron as BackpropNeuron;
+        return null;
+    }
+
     class BackpropNeuron extends Neuron {
         public backDelta: number;
         private _previousWeightDeltas: number[] = [];
@@ -38,11 +44,13 @@ namespace NeuralNet.Backprop {
         public trainAsHidden(index: number, forwardLayer: NeuronLayer) {
             let backDelta = 0;
             for (let i = 0; i < forwardLayer.neurons.length; i++) {
-                let neuron = forwardLayer.neurons[i] as BackpropNeuron;
-                let contribution = neuron.backDelta * neuron.weights[index]
-                let normalisationScale = getScaleFactor(this.output, neuron.inputs[index]);
-                contribution *= normalisationScale;
-                backDelta += contribution;
+                let neuron = asBackpropNeuron(forwardLayer.neurons[i]);
+                if (neuron) {
+                    let contribution = neuron.backDelta * neuron.weights[index]
+                    let normalisationScale = getScaleFactor(this.output, neuron.inputs[index]);
+                    contribution *= normalisationScale;
+                    backDelta += contribution;
+                }
             }
 
             backDelta *= this._activationFunc.derivative(this.activation);
@@ -56,31 +64,32 @@ namespace NeuralNet.Backprop {
             return new BackpropNeuron(activation);
         }
 
-        public trainAsOutput(target: number[]) {
+        private forEachBackPropNeuron(callback: (index: number, neuron: BackpropNeuron) => void) {
             for (let i = 0; i < this.neurons.length; i++) {
-                let neuron = this.neurons[i] as BackpropNeuron;
-                neuron.trainAsOutput(target[i]);
+                let neuron = asBackpropNeuron(this.neurons[i]);
+                if (neuron)
+                    callback(i, neuron);
             }
+        }
+
+        public trainAsOutput(target: number[]) {
+            this.forEachBackPropNeuron((i, n) => n.trainAsOutput(target[i]));
         }
 
         public trainAsHidden(forwardLayer: NeuronLayer) {
-            for (let i = 0; i < this.neurons.length; i++) {
-                let neuron = this.neurons[i] as BackpropNeuron;
-                neuron.trainAsHidden(i, forwardLayer);
-            }
+            this.forEachBackPropNeuron((i, n) => n.trainAsHidden(i, forwardLayer));
         }
 
         public updateWeights(learningRate: number, momentum: number) {
-            for (let i = 0; i < this.neurons.length; i++)
-                (this.neurons[i] as BackpropNeuron).updateWeights(learningRate, momentum);
+            this.forEachBackPropNeuron((_, n) => n.updateWeights(learningRate, momentum));
         }
     }
 
     export class Network extends NeuralNet.Network {
         private _backpropLayers: BackpropLayer[] = [];
 
-        public addNeuronLayer(size: number = 0, activation: ActivationFunctions.ActivationFunction = null): NeuronLayer {
-            let layer = new BackpropLayer(size, activation);
+        public addNeuronLayer(size: number = 0, activation: ActivationFunctions.ActivationFunction = null, addBias = true): NeuronLayer {
+            let layer = new BackpropLayer(size, activation, addBias);
             this.addLayer(layer);
             layer.initialiseWeights();
 

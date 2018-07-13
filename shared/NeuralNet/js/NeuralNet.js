@@ -22,6 +22,17 @@ var NeuralNet;
                 return 1;
             }
         }
+        class _Constant {
+            constructor(_constant) {
+                this._constant = _constant;
+            }
+            transfer(activation) {
+                return this._constant;
+            }
+            derivative(activation) {
+                return 0;
+            }
+        }
         function ReLU() {
             return new _ReLU();
         }
@@ -30,6 +41,10 @@ var NeuralNet;
             return new _Linear();
         }
         ActivationFunctions.Linear = Linear;
+        function Constant(constant = 1) {
+            return new _Constant(constant);
+        }
+        ActivationFunctions.Constant = Constant;
         /*export function Sigmoid(scale: number = 1): ActivationFunction {
             return (inputs: number[], weights: number[]) => {
                 let value: number = 0;
@@ -77,7 +92,6 @@ var NeuralNet;
             weights = weights || NeuralNet.Utils.RandomValueGenerator(-1, 1);
             if (typeof weights !== "function") {
                 weights = NeuralNet.Utils.ArrayValueGenerator(weights);
-                //this.initialiseWeights(weights);
             }
             this.weights = new Array(this.inputs.length);
             for (let i = 0; i < this.weights.length; i++)
@@ -89,7 +103,7 @@ var NeuralNet;
 var NeuralNet;
 (function (NeuralNet) {
     class NeuronLayer {
-        constructor(size = 0, activation = null) {
+        constructor(size = 0, activation = null, addBias = true) {
             this.type = "neuron";
             this.inputs = [];
             this.outputs = [];
@@ -98,6 +112,8 @@ var NeuralNet;
                 let neuron = this.constructNeuron(activation);
                 this.addNeuron(neuron);
             }
+            if (addBias)
+                this.addNeuron(new NeuralNet.BiasNeuron());
             this.initialiseWeights();
         }
         constructNeuron(activation) {
@@ -171,8 +187,8 @@ var NeuralNet;
             layer.setInputs(inputs);
             this._layers.push(layer);
         }
-        addNeuronLayer(size = 0, activation = null) {
-            let layer = new NeuralNet.NeuronLayer(size, activation);
+        addNeuronLayer(size = 0, activation = null, addBias = true) {
+            let layer = new NeuralNet.NeuronLayer(size, activation, addBias);
             this.addLayer(layer);
             layer.initialiseWeights();
             return layer;
@@ -221,6 +237,11 @@ var NeuralNet;
                 return 0;
             return to / from;
         }
+        function asBackpropNeuron(neuron) {
+            if (neuron.constructor === BackpropNeuron)
+                return neuron;
+            return null;
+        }
         class BackpropNeuron extends NeuralNet.Neuron {
             constructor() {
                 super(...arguments);
@@ -246,11 +267,13 @@ var NeuralNet;
             trainAsHidden(index, forwardLayer) {
                 let backDelta = 0;
                 for (let i = 0; i < forwardLayer.neurons.length; i++) {
-                    let neuron = forwardLayer.neurons[i];
-                    let contribution = neuron.backDelta * neuron.weights[index];
-                    let normalisationScale = getScaleFactor(this.output, neuron.inputs[index]);
-                    contribution *= normalisationScale;
-                    backDelta += contribution;
+                    let neuron = asBackpropNeuron(forwardLayer.neurons[i]);
+                    if (neuron) {
+                        let contribution = neuron.backDelta * neuron.weights[index];
+                        let normalisationScale = getScaleFactor(this.output, neuron.inputs[index]);
+                        contribution *= normalisationScale;
+                        backDelta += contribution;
+                    }
                 }
                 backDelta *= this._activationFunc.derivative(this.activation);
                 this.backDelta = backDelta;
@@ -260,21 +283,21 @@ var NeuralNet;
             constructNeuron(activation) {
                 return new BackpropNeuron(activation);
             }
-            trainAsOutput(target) {
+            forEachBackPropNeuron(callback) {
                 for (let i = 0; i < this.neurons.length; i++) {
-                    let neuron = this.neurons[i];
-                    neuron.trainAsOutput(target[i]);
+                    let neuron = asBackpropNeuron(this.neurons[i]);
+                    if (neuron)
+                        callback(i, neuron);
                 }
+            }
+            trainAsOutput(target) {
+                this.forEachBackPropNeuron((i, n) => n.trainAsOutput(target[i]));
             }
             trainAsHidden(forwardLayer) {
-                for (let i = 0; i < this.neurons.length; i++) {
-                    let neuron = this.neurons[i];
-                    neuron.trainAsHidden(i, forwardLayer);
-                }
+                this.forEachBackPropNeuron((i, n) => n.trainAsHidden(i, forwardLayer));
             }
             updateWeights(learningRate, momentum) {
-                for (let i = 0; i < this.neurons.length; i++)
-                    this.neurons[i].updateWeights(learningRate, momentum);
+                this.forEachBackPropNeuron((_, n) => n.updateWeights(learningRate, momentum));
             }
         }
         class Network extends NeuralNet.Network {
@@ -282,8 +305,8 @@ var NeuralNet;
                 super(...arguments);
                 this._backpropLayers = [];
             }
-            addNeuronLayer(size = 0, activation = null) {
-                let layer = new BackpropLayer(size, activation);
+            addNeuronLayer(size = 0, activation = null, addBias = true) {
+                let layer = new BackpropLayer(size, activation, addBias);
                 this.addLayer(layer);
                 layer.initialiseWeights();
                 this._backpropLayers.push(layer);
@@ -303,6 +326,24 @@ var NeuralNet;
         }
         Backprop.Network = Network;
     })(Backprop = NeuralNet.Backprop || (NeuralNet.Backprop = {}));
+})(NeuralNet || (NeuralNet = {}));
+var NeuralNet;
+(function (NeuralNet) {
+    class BiasNeuron extends NeuralNet.Neuron {
+        constructor() {
+            super(NeuralNet.ActivationFunctions.Constant());
+            this._output = 1;
+            this._activationValue = 1;
+        }
+        activate() {
+            return this._output;
+        }
+        initialiseWeights(weights = null) {
+            weights = () => 0;
+            super.initialiseWeights(weights);
+        }
+    }
+    NeuralNet.BiasNeuron = BiasNeuron;
 })(NeuralNet || (NeuralNet = {}));
 /// <reference path="Network.ts" />
 var NeuralNet;

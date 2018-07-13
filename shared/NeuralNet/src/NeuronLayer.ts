@@ -5,11 +5,14 @@ namespace NeuralNet {
         public outputs: number[] = [];
         public neurons: Neuron[] = [];
 
-        public constructor(size = 0, activation: ActivationFunctions.ActivationFunction = null) {
+        public constructor(size = 0, activation: ActivationFunctions.ActivationFunction = null, addBias = true) {
             while (size --> 0) {
                 let neuron = this.constructNeuron(activation);
                 this.addNeuron(neuron);
             }
+
+            if (addBias)
+                this.addNeuron(new BiasNeuron());
 
             this.initialiseWeights();
         }

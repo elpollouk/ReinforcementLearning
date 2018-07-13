@@ -29,8 +29,8 @@ namespace NeuralNet {
             this._layers.push(layer);
         }
 
-        public addNeuronLayer(size: number = 0, activation: ActivationFunctions.ActivationFunction = null): NeuronLayer {
-            let layer = new NeuronLayer(size, activation);
+        public addNeuronLayer(size: number = 0, activation: ActivationFunctions.ActivationFunction = null, addBias = true): NeuronLayer {
+            let layer = new NeuronLayer(size, activation, addBias);
             this.addLayer(layer);
             layer.initialiseWeights();
             return layer;

@@ -3,14 +3,21 @@ declare namespace NeuralNet.ActivationFunctions {
         transfer(activation: number): number;
         derivative(activation: number): number;
     }
+    class _Constant implements ActivationFunction {
+        private _constant;
+        constructor(_constant: number);
+        transfer(activation: number): number;
+        derivative(activation: number): number;
+    }
     function ReLU(): ActivationFunction;
     function Linear(): ActivationFunction;
+    function Constant(constant?: number): _Constant;
 }
 declare namespace NeuralNet {
     class Neuron {
         protected _activationFunc: ActivationFunctions.ActivationFunction;
-        private _output;
-        private _activationValue;
+        protected _output: number;
+        protected _activationValue: number;
         inputs: number[];
         weights: number[];
         constructor(_activationFunc?: ActivationFunctions.ActivationFunction);
@@ -27,7 +34,7 @@ declare namespace NeuralNet {
         inputs: number[];
         outputs: number[];
         neurons: Neuron[];
-        constructor(size?: number, activation?: ActivationFunctions.ActivationFunction);
+        constructor(size?: number, activation?: ActivationFunctions.ActivationFunction, addBias?: boolean);
         protected constructNeuron(activation: ActivationFunctions.ActivationFunction): Neuron;
         activate(): number[];
         addNeuron(neuron: Neuron): void;
@@ -45,7 +52,7 @@ declare namespace NeuralNet {
         activate(): number[];
         setInputSize(size: number): void;
         addLayer(layer: ILayer): void;
-        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
+        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction, addBias?: boolean): NeuronLayer;
         addNormalisingLayer(): NormalisingLayer;
         toJson(): any;
         fromJson(json: any): void;
@@ -54,8 +61,15 @@ declare namespace NeuralNet {
 declare namespace NeuralNet.Backprop {
     class Network extends NeuralNet.Network {
         private _backpropLayers;
-        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction): NeuronLayer;
+        addNeuronLayer(size?: number, activation?: ActivationFunctions.ActivationFunction, addBias?: boolean): NeuronLayer;
         train(target: number[], learningRate: number, momentum: number): void;
+    }
+}
+declare namespace NeuralNet {
+    class BiasNeuron extends Neuron {
+        constructor();
+        activate(): number;
+        initialiseWeights(weights?: Utils.ValueGenerator): void;
     }
 }
 declare namespace NeuralNet.Genetic {
